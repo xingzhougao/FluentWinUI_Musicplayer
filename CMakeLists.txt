@@ -1,0 +1,91 @@
+cmake_minimum_required(VERSION 3.16)
+
+project(FluentWinUI_Musicplayer VERSION 0.1 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(QT_QML_GENERATE_QMLLS_INI ON)
+
+find_package(Qt6 REQUIRED COMPONENTS Quick QuickControls2 Multimedia)
+
+qt_standard_project_setup(REQUIRES 6.8)
+
+# Content of downloaded design from Figma to Qt or similar
+if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/importedcontent/CMakeLists.txt")
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/importedcontent)
+endif()
+
+qt_add_executable(appFluentWinUI_Musicplayer
+
+)
+
+qt_add_qml_module(appFluentWinUI_Musicplayer
+    URI FluentWinUI_Musicplayer
+    QML_FILES
+    SOURCES src/main.cpp
+    QML_FILES qml/Main.qml
+    QML_FILES qml/components/TopBar.qml
+    QML_FILES qml/components/SideBar.qml
+    QML_FILES qml/components/NavButton.qml
+    QML_FILES
+    QML_FILES qml/components/AlbumCard.qml
+    QML_FILES qml/components/MusicRow.qml
+    QML_FILES qml/components/PlayerBar.qml
+    QML_FILES qml/pages/DiscoverPage.qml
+    QML_FILES qml/pages/LocalMusicPage.qml
+    QML_FILES qml/pages/PlaylistPage.qml
+    QML_FILES qml/pages/RecentPage.qml
+    QML_FILES qml/pages/RecommendPage.qml
+    SOURCES
+        src/PlayerController.h
+        src/PlayerController.cpp
+
+    RESOURCES
+        qml/icons/download_manager.svg
+        qml/icons/my_love.svg
+        qml/icons/discover_music.svg
+        qml/icons/recommend.svg
+        qml/icons/playlist.svg
+        qml/icons/local_music.svg
+        qml/icons/recently_player.svg
+        qml/icons/setting_button.svg
+        qml/icons/menu_bar.svg
+        qml/icons/previous.svg
+        qml/icons/next.svg
+        qml/icons/play.svg
+        qml/icons/pause.svg
+        qml/icons/restart.svg
+        qml/icons/volume.svg
+        qml/icons/mute.svg
+        qml/icons/sequence.svg
+        qml/icons/random.svg
+        qml/icons/repeat.svg
+        qml/icons/like.svg
+        qml/icons/cancel_like.svg
+        SOURCES src/MusicTrack.h
+        SOURCES
+        SOURCES src/MusicLibraryModel.h src/MusicLibraryModel.cpp
+        SOURCES src/Lyric.h
+        QML_FILES qml/components/DesktopLyricWindow.qml
+
+)
+
+# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
+# If you are developing for iOS or macOS you should consider setting an
+# explicit, fixed bundle identifier manually though.
+set_target_properties(appFluentWinUI_Musicplayer PROPERTIES
+#    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.appFluentWinUI_Musicplayer
+    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE TRUE
+    WIN32_EXECUTABLE TRUE
+)
+
+target_link_libraries(appFluentWinUI_Musicplayer
+    PRIVATE Qt6::Quick Qt6::QuickControls2  Qt6::Multimedia
+)
+
+install(TARGETS appFluentWinUI_Musicplayer
+    BUNDLE DESTINATION .
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

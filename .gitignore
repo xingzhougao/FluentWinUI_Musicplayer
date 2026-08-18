@@ -1,0 +1,4 @@
+build/
+qml/music_resource/loadmusic_by_default/*
+.qtcreator/
+.qmlls.ini
