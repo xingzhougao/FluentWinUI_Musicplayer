@@ -9,6 +9,7 @@ Item {
     required property var playerController
     property color textPrimaryColor: "#f5f7fb"
     property color textSecondaryColor: "#8c99aa"
+    property url bannerSource: "../image_resource/banner.png"
 
     ScrollView {
         id: contentScroll
@@ -41,6 +42,21 @@ Item {
                     GradientStop { position: 1.0; color: "#63446c"}
                 }
 
+                Image {
+                    id: bannerImage
+                    anchors.fill: parent
+                    source: root.bannerSource
+                    fillMode: Image.PreserveAspectCrop
+                    visible: root.bannerSource !== ""
+                    smooth: true
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: "#40000000"
+                    visible: bannerImage.visible
+                }
+
                 Rectangle {
                     width: 330
                     height: 330
@@ -49,6 +65,7 @@ Item {
                     y: -55
                     color: "#40ffffff"
                     opacity: 0.14
+                    visible: !bannerImage.visible
                 }
 
                 Rectangle {
@@ -59,6 +76,7 @@ Item {
                     y: 105
                     color: "#502568ff"
                     opacity: 0.4
+                    visible: !bannerImage.visible
                 }
 
                 RowLayout {

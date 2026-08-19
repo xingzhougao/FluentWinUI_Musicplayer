@@ -71,6 +71,7 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
         qml/image_resource/night_road.png
         qml/image_resource/rainy_room.png
         qml/image_resource/weekend_coffee.png
+        qml/image_resource/banner.png
         SOURCES src/MusicTrack.h
         SOURCES
         SOURCES src/MusicLibraryModel.h src/MusicLibraryModel.cpp
