@@ -8,6 +8,7 @@ Rectangle {
     property string artist: "Artist"
     property string accent1: "#7d5cff"
     property string accent2: "#3a8cff"
+    property string coverSource: ""
 
     implicitWidth: 220
     implicitHeight: 170
@@ -39,36 +40,43 @@ Rectangle {
         spacing: 12
 
         Rectangle{
+            id: coverArea
+
             width: parent.width
             height: root.height - 75
             radius: 18
             clip: true
 
+            //没有设置图片时 暂时继续显示原来的渐变色
             gradient: Gradient{
                 orientation: Gradient.Horizontal
                 GradientStop { position: 0.0;color: root.accent1}
                 GradientStop { position: 1.0;color: root.accent2}
             }
 
+            //真实主题图片
+            Image {
+                id: coverImage
+                anchors.fill: parent
+                source: root.coverSource
+                fillMode: Image.PreserveAspectCrop      //保持原图比例填满 多出来的部分裁剪
+                visible: root.coverSource !== ""
+                smooth: true
+            }
+
+            //Hover时给图片轻轻加一层暗色
             Rectangle {
-                width: parent.width * 0.35
-                height: width
-                radius: width / 2
-                anchors.centerIn: parent
-                color: "#22000000"
-                border.color: "#44ffffff"
-                border.width: 1
+                anchors.fill: parent
+                color: "#18000000"
+                opacity: root.hovered ? 1.0 : 0.0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 120
+                    }
+                }
             }
 
-            Text{
-                anchors.centerIn: parent
-                text: "♪"
-                color: "white"
-                font.pixelSize: 54
-                font.bold: true
-            }
-
-            Rectangle{
+            Rectangle {
                 id: playBadge
                 width: 46
                 height: 46

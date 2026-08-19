@@ -63,6 +63,14 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
         qml/icons/cancel_like.svg
         qml/icons/addvolume.svg
         qml/icons/recvolume.svg
+        qml/image_resource/alone_night.png
+        qml/image_resource/city_wandering.png
+        qml/image_resource/focused_coding.png
+        qml/image_resource/midnight_neon.png
+        qml/image_resource/morning_clarity.png
+        qml/image_resource/night_road.png
+        qml/image_resource/rainy_room.png
+        qml/image_resource/weekend_coffee.png
         SOURCES src/MusicTrack.h
         SOURCES
         SOURCES src/MusicLibraryModel.h src/MusicLibraryModel.cpp
