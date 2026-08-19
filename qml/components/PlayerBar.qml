@@ -37,6 +37,10 @@ Rectangle {
     property url favoriteIcon: "../icons/like.svg"
     property url favoriteFilledIcon: "../icons/cancel_like.svg"
 
+    //音量加按钮 音量减按钮
+    property url addvolumeIcon: "../icons/addvolume.svg"
+    property url recvolumeIcon: "../icons/recvolume.svg"
+
     //点击歌词按钮时向外发送
     signal lyricRequested()
 
@@ -322,7 +326,7 @@ Rectangle {
                         color: "#243142"
 
                         Rectangle {
-                            width: progressSlider.visualPosition * parent.width
+                            width: progressSlider.visualPosition * parent.width     //visualPosition = value / 1
                             height: parent.height
                             radius: 2
                             color: "#7eb0ff"
@@ -474,16 +478,72 @@ Rectangle {
                 }
             }
 
-            //弹簧
-            Item {
-                Layout.fillWidth: true
+            Button {
+                id:addvolume
+                Layout.preferredWidth: 25
+                Layout.preferredHeight: 36
+
+                padding: 0
+
+                background: Rectangle {
+                    radius: 8
+                    color: addvolume.hovered ? "192532" : "transparent"
+                }
+
+                contentItem: Image {
+                    source: root.addvolumeIcon
+                    width: 20
+                    height: 20
+                    sourceSize.width: 20
+                    sourceSize.height: 20
+                    fillMode: Image.PreserveAspectFit
+                }
+
+                ToolTip.visible: hovered
+                ToolTip.text: "音量加"
+                ToolTip.delay: 500
+
+                onClicked: {
+                    Math.min(1.0,root.playerController.volume += 0.05 )
+                }
             }
+
+            Button {
+                id:recvolume
+                Layout.preferredWidth: 25
+                Layout.preferredHeight: 36
+
+                padding: 0
+
+                background: Rectangle {
+                    radius: 8
+                    color: recvolume.hovered ? "192532" : "transparent"
+                }
+
+                contentItem: Image {
+                    source: root.recvolumeIcon
+                    width: 20
+                    height: 20
+                    sourceSize.width: 20
+                    sourceSize.height: 20
+                    fillMode: Image.PreserveAspectFit
+                }
+
+                ToolTip.visible: hovered
+                ToolTip.text: "音量减"
+                ToolTip.delay: 500
+
+                onClicked: {
+                    Math.max(0.0,root.playerController.volume -= 0.05)
+                }
+            }
+
 
             //播放模式按钮 默认只显示当前模式图片 点击后向上展开Popup
             Button {
                 id: modeButton
 
-                Layout.preferredWidth: 36
+                Layout.preferredWidth: 30
                 Layout.preferredHeight: 36
 
                 background: Rectangle {
@@ -516,7 +576,7 @@ Rectangle {
                     width: 54
                     height: 142
 
-                    x: modeButton.width - width
+                    x: (modeButton.width - width) / 2
                     y: -height - 8
 
                     padding: 6
@@ -539,8 +599,9 @@ Rectangle {
                         Button {
                             id: sequenceButton
 
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredWidth: 30
+                            Layout.preferredHeight: 36
+                            Layout.alignment: Qt.AlignHCenter   //控件在被ROWLayout ColumnLayout GridLayout 这类Layout管理时 让它在水平方向居中
 
                             background: Rectangle {
                                 radius: 7
@@ -572,8 +633,9 @@ Rectangle {
                         Button {
                             id: randomButton
 
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredWidth: 30
+                            Layout.preferredHeight: 36
+                            Layout.alignment: Qt.AlignHCenter
 
                             background: Rectangle {
                                 radius: 7
@@ -605,8 +667,9 @@ Rectangle {
                         Button {
                             id: repeatModeButton
 
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40
+                            Layout.preferredWidth: 30
+                            Layout.preferredHeight: 36
+                            Layout.alignment: Qt.AlignHCenter
 
                             background: Rectangle {
                                 radius: 7

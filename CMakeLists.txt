@@ -61,6 +61,8 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
         qml/icons/repeat.svg
         qml/icons/like.svg
         qml/icons/cancel_like.svg
+        qml/icons/addvolume.svg
+        qml/icons/recvolume.svg
         SOURCES src/MusicTrack.h
         SOURCES
         SOURCES src/MusicLibraryModel.h src/MusicLibraryModel.cpp
