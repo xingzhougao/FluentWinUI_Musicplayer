@@ -5,6 +5,7 @@
 #include <QAudioOutput>
 #include <QVector>
 #include <QString>
+#include <QVariantList>
 
 #include "MusicLibraryModel.h"
 
@@ -23,11 +24,15 @@ class PlayerController : public QObject
     Q_PROPERTY(int playMode READ playMode WRITE setPlayMode NOTIFY playModeChanged)
     Q_PROPERTY(int currentIndex READ currentIndex NOTIFY currentIndexChanged)
     Q_PROPERTY(QString currentLyric READ currentLyric NOTIFY currentLyricChanged)
+    Q_PROPERTY(QVariantList lyricList READ lyricList NOTIFY lyricListChanged)
+    Q_PROPERTY(int currentLyricIndex READ currentLyricIndex NOTIFY currentLyricIndexChanged)
 
 public:
     explicit PlayerController(MusicLibraryModel * library,QObject * parent = nullptr);
     QString title() const;
     QString currentLyric() const;
+    QVariantList lyricList() const;
+    int currentLyricIndex() const;
     QString artist() const;
     bool playing() const;
     double progress() const;
@@ -46,6 +51,8 @@ public:
     Q_INVOKABLE void playIndex(int index);
     Q_INVOKABLE void toggleFavorite();
     Q_INVOKABLE QString formatTime(qint64 milliseconds) const;
+    Q_INVOKABLE void seek(qint64 milliseconds);
+    Q_INVOKABLE void seekToLyric(int index);
 
 public slots:
     void setProgress(double value);
@@ -65,6 +72,8 @@ signals:
     void playModeChanged();
     void currentIndexChanged();
     void currentLyricChanged();
+    void lyricListChanged();
+    void currentLyricIndexChanged();
     void playbackError(const QString &message);
 
 private:
@@ -82,4 +91,6 @@ private:
     //0 顺序 1随机 2单曲循环
     int m_playMode = 0;
     QString m_currentLyric;
+    int m_currentLyricIndex = -1;
+    QVariantList m_lyricList;
 };

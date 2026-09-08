@@ -44,7 +44,10 @@ Rectangle {
     //点击歌词按钮时向外发送
     signal lyricRequested()
 
-    //播放模式改变后向外发送
+    //点击左下角音乐图标时 向外发送(全屏歌词界面)
+    signal lyricPageRequested()
+
+    //播放模式改变后向外发送(桌面歌词小窗口)
     signal playModeRequested(int mode)
 
 
@@ -92,14 +95,18 @@ Rectangle {
 
             //歌曲封面
             Rectangle {
+                id: albumCover
                 Layout.preferredWidth: 58
                 Layout.preferredHeight: 58
                 radius: 15
 
                 gradient: Gradient {
-                    GradientStop { position: 0.0; color: "#6d60d8" }
-                    GradientStop { position: 1.0; color: "#3979a8"}
+                    GradientStop { position: 0.0; color: coverMouseArea.containsMouse ? "#7e6fff" : "#6d60d8" }
+                    GradientStop { position: 1.0; color: coverMouseArea.containsMouse ? "#458bc0" : "#3979a8"}
                 }
+
+                scale: coverMouseArea.pressed ? 0.95 : (coverMouseArea.containsMouse ? 1.05 : 1.0)
+                Behavior on scale { NumberAnimation { duration: 100 } }
 
                 Text {
                     anchors.centerIn: parent
@@ -107,6 +114,20 @@ Rectangle {
                     color: "white"
                     font.pixelSize: 24
                 }
+
+                MouseArea {
+                    id: coverMouseArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        root.lyricPageRequested()
+                    }
+                }
+
+                ToolTip.visible: coverMouseArea.containsMouse
+                ToolTip.text: "歌词界面"
+                ToolTip.delay: 400
             }
 
             //歌名+歌手

@@ -16,6 +16,7 @@ ApplicationWindow {
     color: "#0b1017"
 
     property int selectedNav: 0
+    property bool lyricViewOpen: false
 
     readonly property color panelColor: "#101721"
     readonly property color panelColor2: "#131c27"
@@ -54,40 +55,65 @@ ApplicationWindow {
             borderColor: window.borderColor
             textPrimaryColor: window.textPrimaryColor
             textSecondaryColor: window.textSecondaryColor
+            isLyricMode: window.lyricViewOpen
+
+            onBackRequested: {
+                window.lyricViewOpen = false
+            }
         }
 
-        RowLayout {
+        Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 0
 
-            SideBar {
-                Layout.preferredWidth: implicitWidth
-                Layout.fillHeight: true
+            //主界面
+            RowLayout {
+                anchors.fill: parent
+                spacing: 0
+                visible: !window.lyricViewOpen
 
-                selectedIndex: window.selectedNav
-                borderColor: window.borderColor
-                textPrimaryColor: window.textPrimaryColor
-                textSecondaryColor: window.textSecondaryColor
+                SideBar {
+                    Layout.preferredWidth: implicitWidth
+                    Layout.fillHeight: true
 
-                onNavigationRequested: function(index) { window.selectedNav = index}
-            }
-
-            StackLayout {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                currentIndex: window.selectedNav
-
-                DiscoverPage {
-                    playerController: player
+                    selectedIndex: window.selectedNav
+                    borderColor: window.borderColor
                     textPrimaryColor: window.textPrimaryColor
                     textSecondaryColor: window.textSecondaryColor
+
+                    onNavigationRequested: function(index) { window.selectedNav = index}
                 }
 
-                RecommendPage {}
-                PlaylistPage {}
-                LocalMusicPage {}
-                RecentPage {}
+                StackLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    currentIndex: window.selectedNav
+
+                    DiscoverPage {
+                        playerController: player
+                        textPrimaryColor: window.textPrimaryColor
+                        textSecondaryColor: window.textSecondaryColor
+                    }
+
+                    RecommendPage {}
+                    PlaylistPage {}
+                    LocalMusicPage {}
+                    RecentPage {}
+                }
+            }
+            //全屏交互式歌词界面
+            LyricPage {
+                anchors.fill: parent
+                visible: window.lyricViewOpen
+                playerController: player
+                textPrimaryColor: window.textPrimaryColor
+                textSecondaryColor: window.textSecondaryColor
+                accentColor: window.accentColor
+
+                onBackRequested: {
+                    window.lyricViewOpen = false
+                }
             }
         }
 
@@ -102,6 +128,11 @@ ApplicationWindow {
 
             onLyricRequested: {
                 desktopLyric.visible = !desktopLyric.visible
+            }
+
+            //相应右下角封面点击
+            onLyricPageRequested: {
+                window.lyricViewOpen = !window.lyricViewOpen
             }
         }
     }

@@ -77,6 +77,7 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
         SOURCES src/MusicLibraryModel.h src/MusicLibraryModel.cpp
         SOURCES src/Lyric.h
         QML_FILES qml/components/DesktopLyricWindow.qml
+        QML_FILES qml/pages/LyricPage.qml
 
 )
 

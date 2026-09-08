@@ -68,11 +68,17 @@ PlayerController::PlayerController(MusicLibraryModel * library,QObject * parent)
         m_player->stop();
         m_player->setSource(QUrl());
         m_index = -1;
+        m_currentLyric.clear();
+        m_currentLyricIndex = -1;
+        m_lyricList.clear();
         emit currentIndexChanged();
         emit trackChanged();
         emit positionChanged();
         emit durationChanged();
         emit progressChanged();
+        emit currentLyricChanged();
+        emit currentLyricIndexChanged();
+        emit lyricListChanged();
     });
 
     if(m_library && m_library->count() > 0)
@@ -375,9 +381,50 @@ void PlayerController::toggleFavorite()
     emit favoriteChanged();
 }
 
+QVariantList  PlayerController::lyricList() const
+{
+    return m_lyricList;
+}
+
+int PlayerController::currentLyricIndex() const
+{
+    return m_currentLyricIndex;
+}
+
 QString PlayerController::currentLyric() const
 {
     return m_currentLyric;
+}
+
+void PlayerController::seek(qint64 milliseconds)
+{
+    const qint64 totalDuration = m_player->duration();
+    if(totalDuration > 0)
+        milliseconds = qBound<qint64>(0,milliseconds,totalDuration);
+    else
+        milliseconds = qMax<qint64>(0,milliseconds);
+    m_player->setPosition(milliseconds);
+    updateCurrentLyric(milliseconds);
+}
+
+void PlayerController::seekToLyric(int index)
+{
+    if(!m_library || m_index < 0 || m_index >= m_library->count())
+        return;
+    const MusicTrack track = m_library->trackAt(m_index);
+    if(index >= 0 && index < track.lyrics.size())
+    {
+        qint64 targetTime = track.lyrics[index].timeMs;
+        m_player->setPosition(targetTime);
+        m_currentLyricIndex = index;
+        m_currentLyric = track.lyrics[index].text;
+        emit currentLyricIndexChanged();
+        emit currentLyricChanged();
+        if(m_player->playbackState() != QMediaPlayer::PlayingState)
+        {
+            m_player->play();
+        }
+    }
 }
 
 void PlayerController::loadLyrics(int index)
@@ -392,7 +439,11 @@ void PlayerController::loadLyrics(int index)
     QVector<LyricLine> lyrics;
     //切歌时先把当前歌词清掉
     m_currentLyric.clear();
+    m_currentLyricIndex = -1;
+    m_lyricList.clear();
     emit currentLyricChanged();
+    emit currentLyricIndexChanged();
+    emit lyricListChanged();
 
     QFileInfo musicInfo(track.filePath);
     const QString lrcPath = musicInfo.absolutePath() + "/" + musicInfo.completeBaseName() + ".lrc";
@@ -452,6 +503,18 @@ void PlayerController::loadLyrics(int index)
     });
     //保存到MusicTrack
     m_library->setLyrics(index,lyrics);
+
+    m_lyricList.clear();
+    m_lyricList.reserve(lyrics.size());
+    for(const auto &line : lyrics)
+    {
+        QVariantMap map;
+        map.insert(QStringLiteral("time"),line.timeMs);
+        map.insert(QStringLiteral("text"),line.text);
+        m_lyricList.append(map);
+    }
+    emit lyricListChanged();
+
     qDebug()<<"歌词加载完成,共"<<lyrics.size()<<"句";
 }
 
@@ -464,15 +527,31 @@ void PlayerController::updateCurrentLyric(qint64 position)
 
     const MusicTrack track = m_library->trackAt(m_index);
     if(track.lyrics.isEmpty())
+    {
+        if(m_currentLyricIndex != -1)
+        {
+            m_currentLyricIndex = -1;
+            emit currentLyricIndexChanged();
+        }
         return;
+    }
+
+    int activeIndex = -1;
     QString lyric;
     for(int i = track.lyrics.size() - 1;i >= 0;--i)
     {
         if(position >= track.lyrics[i].timeMs)
         {
             lyric = track.lyrics[i].text;
+            activeIndex = i;
             break;
         }
+    }
+
+    if(m_currentLyricIndex != activeIndex)
+    {
+        m_currentLyricIndex = activeIndex;
+        emit currentLyricIndexChanged();
     }
 
     if(lyric == m_currentLyric)

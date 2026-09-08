@@ -5,7 +5,6 @@ import QtQuick.Layouts
 Rectangle{
     id: root
     implicitHeight: 74
-    color: "#0e141d"
     border.color: root.borderColor
     border.width: 1
 
@@ -13,11 +12,63 @@ Rectangle{
     property color textPrimaryColor: "#f5f7fb"      //灰白
     property color textSecondaryColor: "#8c99aa"    //蓝灰
 
+    //歌词模式标记与返回信号
+    property bool isLyricMode: false
+    signal backRequested()
+
+    //歌词模式下与歌词页背景无缝融合
+    color: root.isLyricMode ? "#0c131e" : "#0e141d"
+
     RowLayout{
         anchors.fill: parent
         anchors.leftMargin: 22
         anchors.rightMargin: 22
         spacing: 18
+
+        //歌词界面返回按钮
+        Button {
+            id: backButton
+            visible: root.isLyricMode
+            Layout.preferredWidth: 92
+            Layout.preferredHeight: 38
+
+            background: Rectangle {
+                radius: 19
+                color: backButton.hovered ? "#24354c" : "#162232"
+                border.color: backButton.hovered ? "#415f8a" : "#263952"
+                border.width: 1
+
+                Behavior on color { ColorAnimation { duration: 150 } }
+                Behavior on border.color { ColorAnimation { duration: 150 } }
+            }
+
+            contentItem: RowLayout {
+                spacing: 6
+                anchors.centerIn: parent
+
+                Text {
+                    text: "˅"
+                    color: root.textPrimaryColor
+                    font.pixelSize: 16
+                    font.bold: true
+                }
+
+                Text {
+                    text: "返回"
+                    color: root.textPrimaryColor
+                    font.pixelSize: 13
+                    font.weight: Font.Medium
+                }
+            }
+
+            ToolTip.visible: hovered
+            ToolTip.text: "收起歌词并返回主界面"
+            ToolTip.delay: 400
+
+            onClicked: {
+                root.backRequested()
+            }
+        }
 
         Rectangle{
             width: 38
@@ -79,6 +130,7 @@ Rectangle{
         }
 
         Rectangle{
+            visible: !root.isLyricMode
             Layout.preferredWidth: 460
             Layout.preferredHeight: 42
             radius: 19
