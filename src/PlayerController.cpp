@@ -60,7 +60,10 @@ PlayerController::PlayerController(MusicLibraryModel * library,QObject * parent)
             if(m_index < 0)
                 return;
             if(m_index >= topLeft.row() && m_index <= bottomRight.row())
+            {
                 emit trackChanged();
+                emit favoriteChanged();     //列表点赞时 通知底层Playbar刷新
+            }
         });
     }
     //MusicLibraryModel 重新扫描歌曲后 原来的m_index就不应该继续使用

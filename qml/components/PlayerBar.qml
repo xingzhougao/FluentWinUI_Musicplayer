@@ -34,8 +34,8 @@ Rectangle {
     property url repeatIcon: "../icons/repeat.svg"     //重复播放
 
     //喜欢按钮
-    property url favoriteIcon: "../icons/like.svg"
-    property url favoriteFilledIcon: "../icons/cancel_like.svg"
+    property url favoriteIcon: "../icons/cancel_like_blue.svg"   //未喜欢 空心
+    property url favoriteFilledIcon: "../icons/like.svg"    //喜欢 实心
 
     //音量加按钮 音量减按钮
     property url addvolumeIcon: "../icons/addvolume.svg"

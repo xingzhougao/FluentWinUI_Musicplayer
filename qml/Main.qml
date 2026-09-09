@@ -98,7 +98,14 @@ ApplicationWindow {
 
                     RecommendPage {}
                     PlaylistPage {}
-                    LocalMusicPage {}
+                    LocalMusicPage {
+                        playerController: player
+                        musicModel: musicLibrary
+                        textPrimaryColor: window.textPrimaryColor
+                        textSecondaryColor: window.textSecondaryColor
+                        accentColor: window.accentColor
+                        borderColor: window.borderColor
+                    }
                     RecentPage {}
                 }
             }

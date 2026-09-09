@@ -61,6 +61,7 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
         qml/icons/repeat.svg
         qml/icons/like.svg
         qml/icons/cancel_like.svg
+        qml/icons/cancel_like_blue.svg
         qml/icons/addvolume.svg
         qml/icons/recvolume.svg
         qml/image_resource/alone_night.png

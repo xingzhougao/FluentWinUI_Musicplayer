@@ -1,6 +1,10 @@
 #include "MusicLibraryModel.h"
 #include <QDirIterator>
 #include <QFileInfo>
+#include <QFile>
+#include <QTextStream>
+#include <QRegularExpression>
+#include <algorithm>
 
 MusicLibraryModel::MusicLibraryModel(QObject * parent) : QAbstractListModel(parent){}
 
@@ -79,11 +83,73 @@ void MusicLibraryModel::scanDirectory(const QString & directory)
         QFileInfo info(filePath);
         MusicTrack track;
         track.filePath = info.absoluteFilePath();
-        //元数据没有加载时;暂时使用文件名作为标题
-        track.title = info.completeBaseName();
-        track.artist = "未知歌手";
+        QString baseName = info.completeBaseName();
+        QStringList parts = baseName.split(" - ");
+        //提取文件名中的序号 歌曲 歌手
+        if(parts.size() >= 3)
+        {
+            track.title = parts[1].trimmed();
+            track.artist = parts[2].trimmed();
+            track.album = track.title + " (单曲)";
+        }else if(parts.size() == 2)
+        {
+            track.title = parts[0].trimmed();
+            track.artist = parts[1].trimmed();
+            track.album = track.title + " (单曲)";
+        }else {
+            track.title = baseName;
+            track.artist = "未知歌手";
+            track.album = "热门单曲";
+        }
+        //读取同名.lrc文件解析最后一行的时间戳得到毫秒总时长
+        QString lrcPath = info.absolutePath() + "/" + baseName + ".lrc";
+        QFile lrcFile(lrcPath);
+        if(lrcFile.exists() && lrcFile.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            QTextStream stream(&lrcFile);
+            static const QRegularExpression regex(R"(\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\])");
+            qint64 lastTimestamp = 0;
+            while(!stream.atEnd())
+            {
+                QString line = stream.readLine();
+                QRegularExpressionMatchIterator it = regex.globalMatch(line);
+                while(it.hasNext())
+                {
+                    QRegularExpressionMatch match = it.next();
+                    int mm = match.captured(1).toInt();     //分
+                    int ss = match.captured(2).toInt();     //秒
+                    QString frac = match.captured(3);
+                    int ms = 0;
+                    if(frac.length() == 1)
+                    {
+                        ms = frac.toInt() * 100;
+                    }else if(frac.length() == 2)
+                    {
+                        ms = frac.toInt() * 10;
+                    }else if(frac.length() >= 3)
+                    {
+                        ms = frac.left(3).toInt();
+                    }
+                    qint64 t = (mm * 60 + ss) * 1000 + ms;
+                    if(t > lastTimestamp)
+                        lastTimestamp = t;
+                }
+            }
+            if(lastTimestamp > 0)
+            {
+                track.duration = lastTimestamp + 5000;
+            }
+            lrcFile.close();
+        }
+        if(track.duration <= 0 && info.size() > 0)
+        {
+            track.duration = (info.size() / 16000) * 1000;  //兜底估算
+        }
         m_tracks.append(track);
     }
+    std::sort(m_tracks.begin(),m_tracks.end(),[](const MusicTrack & a,const MusicTrack & b){
+        return a.filePath.localeAwareCompare(b.filePath) < 0;
+    });
     endResetModel();
     emit countChanged();
 }
