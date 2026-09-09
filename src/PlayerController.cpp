@@ -151,6 +151,26 @@ void PlayerController::togglePlay()
     }
 }
 
+//停止播放并重置播放状态
+void PlayerController::stop()
+{
+    m_player->stop();
+    m_player->setSource(QUrl());
+    m_index = -1;
+    m_currentLyric.clear();
+    m_currentLyricIndex = -1;
+    m_lyricList.clear();
+    emit currentIndexChanged();
+    emit trackChanged();
+    emit positionChanged();
+    emit durationChanged();
+    emit progressChanged();
+    emit currentLyricChanged();
+    emit currentLyricIndexChanged();
+    emit lyricListChanged();
+    emit favoriteChanged();
+}
+
 //上一首
 void PlayerController::previous()
 {
@@ -536,7 +556,7 @@ void PlayerController::updateCurrentLyric(qint64 position)
 
 MusicLibraryModel * PlayerController::currentLibrary() const
 {
-    return m_library;
+    return m_library.data();
 }
 
 void PlayerController::setLibrary(MusicLibraryModel * library)
@@ -545,8 +565,10 @@ void PlayerController::setLibrary(MusicLibraryModel * library)
         return;
 
     if(m_library)
+    {
         //解绑旧模型信号连接
         disconnect(m_library,nullptr,this,nullptr);
+    }
 
     m_library = library;
     if(m_library)
@@ -561,6 +583,55 @@ void PlayerController::setLibrary(MusicLibraryModel * library)
                 emit favoriteChanged();
             }
         });
+
+        //监听新模型删除行：如果删除的是当前正在播放的歌曲，停止播放并重置；如果删除的是之前的歌曲，修正索引
+        connect(m_library,&MusicLibraryModel::rowsAboutToBeRemoved,this,[this](const QModelIndex &, int first, int last){
+            if(m_index >= first && m_index <= last)
+            {
+                m_player->stop();
+                m_player->setSource(QUrl());
+                m_index = -1;
+                m_currentLyric.clear();
+                m_currentLyricIndex = -1;
+                m_lyricList.clear();
+                emit currentIndexChanged();
+                emit trackChanged();
+                emit positionChanged();
+                emit durationChanged();
+                emit progressChanged();
+                emit currentLyricChanged();
+                emit currentLyricIndexChanged();
+                emit lyricListChanged();
+            }
+            else if(m_index > last)
+            {
+                m_index -= (last - first + 1);
+                emit currentIndexChanged();
+            }
+        });
+
+        //监听模型移动行：调整当前播放歌曲的索引
+        connect(m_library,&MusicLibraryModel::rowsMoved,this,[this](const QModelIndex &, int sourceStart, int sourceEnd, const QModelIndex &, int destinationRow){
+            if (m_index < 0)
+                return;
+            if (m_index >= sourceStart && m_index <= sourceEnd)
+            {
+                int target = (destinationRow > sourceStart) ? (destinationRow - 1) : destinationRow;
+                m_index = target;
+                emit currentIndexChanged();
+            }
+            else if (sourceStart < m_index && destinationRow > m_index)
+            {
+                m_index--;
+                emit currentIndexChanged();
+            }
+            else if (sourceStart > m_index && destinationRow <= m_index)
+            {
+                m_index++;
+                emit currentIndexChanged();
+            }
+        });
+
         //监听新模型的重置
         connect(m_library,&MusicLibraryModel::modelReset,this,[this](){
             m_player->stop();
@@ -577,6 +648,27 @@ void PlayerController::setLibrary(MusicLibraryModel * library)
             emit currentLyricChanged();
             emit currentLyricIndexChanged();
             emit lyricListChanged();
+        });
+
+        //监听模型销毁：若正在播放的歌单被删除，安全停止播放并解除指针
+        connect(m_library,&QObject::destroyed,this,[this](){
+            m_player->stop();
+            m_player->setSource(QUrl());
+            m_library = nullptr;
+            m_index = -1;
+            m_currentLyric.clear();
+            m_currentLyricIndex = -1;
+            m_lyricList.clear();
+            emit currentIndexChanged();
+            emit trackChanged();
+            emit positionChanged();
+            emit durationChanged();
+            emit progressChanged();
+            emit currentLyricChanged();
+            emit currentLyricIndexChanged();
+            emit lyricListChanged();
+            emit favoriteChanged();
+            emit currentLibraryChanged();
         });
     }
 

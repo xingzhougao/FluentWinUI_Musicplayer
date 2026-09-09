@@ -308,3 +308,72 @@ void MusicLibraryModel::scanRandomDirectory(const QString & directory,int count)
     endResetModel();
     emit countChanged();
 }
+
+void MusicLibraryModel::appendTrack(const MusicTrack & track)
+{
+    beginInsertRows(QModelIndex(), m_tracks.size(), m_tracks.size());
+    m_tracks.append(track);
+    endInsertRows();
+    emit countChanged();
+}
+
+void MusicLibraryModel::addTrackFromLibrary(MusicLibraryModel* source, int sourceIndex)
+{
+    if (!source || sourceIndex < 0 || sourceIndex >= source->count())
+        return;
+    const MusicTrack track = source->trackAt(sourceIndex);
+    if (containsFilePath(track.filePath))
+        return;
+    appendTrack(track);
+}
+
+void MusicLibraryModel::removeTrack(int index)
+{
+    if (index < 0 || index >= m_tracks.size())
+        return;
+    beginRemoveRows(QModelIndex(), index, index);
+    m_tracks.removeAt(index);
+    endRemoveRows();
+    emit countChanged();
+}
+
+bool MusicLibraryModel::moveTrack(int from, int to)
+{
+    if (from < 0 || from >= m_tracks.size() || to < 0 || to >= m_tracks.size() || from == to)
+        return false;
+
+    int destinationChild = (to > from) ? (to + 1) : to;
+    if (!beginMoveRows(QModelIndex(), from, from, QModelIndex(), destinationChild))
+        return false;
+
+    m_tracks.move(from, to);
+    endMoveRows();
+    return true;
+}
+
+bool MusicLibraryModel::containsFilePath(const QString & filePath) const
+{
+    for (const auto & t : m_tracks) {
+        if (t.filePath == filePath)
+            return true;
+    }
+    return false;
+}
+
+QStringList MusicLibraryModel::allFilePaths() const
+{
+    QStringList list;
+    for (const auto & t : m_tracks) {
+        list.append(t.filePath);
+    }
+    return list;
+}
+
+void MusicLibraryModel::clear()
+{
+    beginResetModel();
+    m_tracks.clear();
+    endResetModel();
+    emit countChanged();
+}
+

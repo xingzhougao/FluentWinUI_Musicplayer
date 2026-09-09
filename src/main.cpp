@@ -4,6 +4,7 @@
 #include <QQuickStyle>
 #include "PlayerController.h"
 #include "MusicLibraryModel.h"
+#include "PlaylistManager.h"
 #include <QDir>
 
 int main(int argc,char * argv[])
@@ -21,10 +22,14 @@ int main(int argc,char * argv[])
     recommendLibrary.scanRandomDirectory(recommendDir,42);
     //创建播放器
     PlayerController player(&library);
+    //创建歌单管理器
+    PlaylistManager playlistManager;
+
     QQmlApplicationEngine engine;       //创建QML引擎
     engine.rootContext()->setContextProperty("player",&player);
     engine.rootContext()->setContextProperty("musicLibrary",&library);
     engine.rootContext()->setContextProperty("recommendLibrary",&recommendLibrary);
+    engine.rootContext()->setContextProperty("playlistManager",&playlistManager);
 
     QObject::connect(&engine,&QQmlApplicationEngine::objectCreationFailed,&app,
                      [](){QCoreApplication::exit(-1);},Qt::QueuedConnection);

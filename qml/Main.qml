@@ -120,7 +120,15 @@ ApplicationWindow {
                         accentColor: window.accentColor
                         borderColor: window.borderColor
                     }
-                    PlaylistPage {}
+                    PlaylistPage {
+                        playerController: player
+                        localLibrary: typeof musicLibrary !== "undefined" ? musicLibrary : null
+                        playlistMgr: typeof playlistManager !== "undefined" ? playlistManager : null
+                        textPrimaryColor: window.textPrimaryColor
+                        textSecondaryColor: window.textSecondaryColor
+                        accentColor: window.accentColor
+                        borderColor: window.borderColor
+                    }
                     LocalMusicPage {
                         playerController: player
                         musicModel: musicLibrary

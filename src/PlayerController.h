@@ -6,6 +6,7 @@
 #include <QVector>
 #include <QString>
 #include <QVariantList>
+#include <QPointer>
 
 #include "MusicLibraryModel.h"
 
@@ -45,8 +46,9 @@ public:
     int playMode() const;
     int currentIndex() const;
     MusicLibraryModel * currentLibrary() const;
-    void setLibrary(MusicLibraryModel * library);
+    Q_INVOKABLE void setLibrary(MusicLibraryModel * library);
     Q_INVOKABLE void togglePlay();
+    Q_INVOKABLE void stop();
     Q_INVOKABLE void next();
     Q_INVOKABLE void previous();
     Q_INVOKABLE void restart();
@@ -89,7 +91,7 @@ private:
     void updateCurrentLyric(qint64 position);
 
 private:
-    MusicLibraryModel * m_library = nullptr;
+    QPointer<MusicLibraryModel> m_library = nullptr;
     QMediaPlayer * m_player = nullptr;
     QAudioOutput * m_audioOutput = nullptr;
     int m_index = -1;

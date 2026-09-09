@@ -38,6 +38,10 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
     SOURCES
         src/PlayerController.h
         src/PlayerController.cpp
+        src/MusicLibraryModel.h
+        src/MusicLibraryModel.cpp
+        src/PlaylistManager.h
+        src/PlaylistManager.cpp
 
     RESOURCES
         qml/icons/download_manager.svg
@@ -64,6 +68,7 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
         qml/icons/cancel_like_blue.svg
         qml/icons/addvolume.svg
         qml/icons/recvolume.svg
+        qml/icons/playlist_delete.svg
         qml/image_resource/alone_night.png
         qml/image_resource/city_wandering.png
         qml/image_resource/focused_coding.png
