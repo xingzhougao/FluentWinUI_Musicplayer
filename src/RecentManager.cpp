@@ -1,4 +1,6 @@
-﻿#include "RecentManager.h"
+#include "RecentManager.h"
+#include <QCoreApplication>
+#include <QDir>
 #include <QFileInfo>
 #include <QDebug>
 
@@ -22,11 +24,24 @@ int RecentManager::count() const
 
 QString RecentManager::getIniPath() const
 {
-    QString configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+    QString configDir = QStringLiteral("D:/Qt_Project/FluentWinUI_Musicplayer/config");
+    if (!QDir(configDir).exists())
+    {
+        // 兼容其他机器或非 D 盘路径：尝试通过可执行文件向上推导工程根目录或 exe 同级 config
+        QString relProjectConfig = QDir::cleanPath(QCoreApplication::applicationDirPath() + QStringLiteral("/../../config"));
+        if (QDir(relProjectConfig).exists())
+        {
+            configDir = relProjectConfig;
+        }
+        else
+        {
+            configDir = QDir::cleanPath(QCoreApplication::applicationDirPath() + QStringLiteral("/config"));
+        }
+    }
     QDir dir(configDir);
     if (!dir.exists())
         dir.mkpath(".");
-    return dir.filePath("recent_tracks.ini");
+    return dir.filePath(QStringLiteral("recent_tracks.ini"));
 }
 
 void RecentManager::recordTrack(const MusicTrack & track)
@@ -87,7 +102,11 @@ void RecentManager::loadRecentTracks()
 {
     QString path = getIniPath();
     if (!QFile::exists(path))
+    {
+        // 初始保存一次，这样即使刚启动没播放，config 目录下也能立即看到 recent_tracks.ini
+        saveRecentTracks();
         return;
+    }
 
     QSettings settings(path, QSettings::IniFormat);
     int size = settings.beginReadArray(QStringLiteral("recent_tracks"));
