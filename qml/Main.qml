@@ -137,7 +137,15 @@ ApplicationWindow {
                         accentColor: window.accentColor
                         borderColor: window.borderColor
                     }
-                    RecentPage {}
+                    RecentPage {
+                        playerController: player
+                        recentModel: typeof recentLibrary !== "undefined" ? recentLibrary : null
+                        recentMgr: typeof recentManager !== "undefined" ? recentManager : null
+                        textPrimaryColor: window.textPrimaryColor
+                        textSecondaryColor: window.textSecondaryColor
+                        accentColor: window.accentColor
+                        borderColor: window.borderColor
+                    }
                 }
             }
             //全屏交互式歌词界面

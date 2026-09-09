@@ -10,6 +10,8 @@
 
 #include "MusicLibraryModel.h"
 
+class RecentManager;
+
 class PlayerController : public QObject
 {
     Q_OBJECT
@@ -47,6 +49,7 @@ public:
     int currentIndex() const;
     MusicLibraryModel * currentLibrary() const;
     Q_INVOKABLE void setLibrary(MusicLibraryModel * library);
+    void setRecentManager(RecentManager * manager);
     Q_INVOKABLE void togglePlay();
     Q_INVOKABLE void stop();
     Q_INVOKABLE void next();
@@ -100,4 +103,5 @@ private:
     QString m_currentLyric;
     int m_currentLyricIndex = -1;
     QVariantList m_lyricList;
+    RecentManager * m_recentManager = nullptr;
 };

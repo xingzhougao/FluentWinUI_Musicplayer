@@ -317,6 +317,16 @@ void MusicLibraryModel::appendTrack(const MusicTrack & track)
     emit countChanged();
 }
 
+void MusicLibraryModel::insertTrack(int index, const MusicTrack & track)
+{
+    if (index < 0 || index > m_tracks.size())
+        return;
+    beginInsertRows(QModelIndex(), index, index);
+    m_tracks.insert(index, track);
+    endInsertRows();
+    emit countChanged();
+}
+
 void MusicLibraryModel::addTrackFromLibrary(MusicLibraryModel* source, int sourceIndex)
 {
     if (!source || sourceIndex < 0 || sourceIndex >= source->count())
@@ -353,11 +363,16 @@ bool MusicLibraryModel::moveTrack(int from, int to)
 
 bool MusicLibraryModel::containsFilePath(const QString & filePath) const
 {
-    for (const auto & t : m_tracks) {
-        if (t.filePath == filePath)
-            return true;
+    return indexOfFilePath(filePath) != -1;
+}
+
+int MusicLibraryModel::indexOfFilePath(const QString & filePath) const
+{
+    for (int i = 0; i < m_tracks.size(); ++i) {
+        if (m_tracks[i].filePath == filePath)
+            return i;
     }
-    return false;
+    return -1;
 }
 
 QStringList MusicLibraryModel::allFilePaths() const

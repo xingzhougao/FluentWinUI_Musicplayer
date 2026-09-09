@@ -45,10 +45,12 @@ public:
 
     // 歌单动态增删歌曲
     void appendTrack(const MusicTrack & track);
+    void insertTrack(int index, const MusicTrack & track);
     Q_INVOKABLE void addTrackFromLibrary(MusicLibraryModel* source, int sourceIndex);
     Q_INVOKABLE void removeTrack(int index);
     Q_INVOKABLE bool moveTrack(int from, int to);
     Q_INVOKABLE bool containsFilePath(const QString & filePath) const;
+    Q_INVOKABLE int indexOfFilePath(const QString & filePath) const;
     QStringList allFilePaths() const;
     Q_INVOKABLE void clear();
 

@@ -1,4 +1,5 @@
 #include "PlayerController.h"
+#include "RecentManager.h"
 
 #include <QMediaMetaData>
 #include <QRandomGenerator>
@@ -256,6 +257,10 @@ void PlayerController::selectTrack(int index,bool autoplay)
     m_player->setSource(QUrl::fromLocalFile(track.filePath));
     //标记最近播放并开始播放
     m_library->markPlayed(index);
+    if(m_recentManager)
+    {
+        m_recentManager->recordTrack(track);
+    }
     if(autoplay)
         m_player->play();
 }
@@ -673,6 +678,11 @@ void PlayerController::setLibrary(MusicLibraryModel * library)
     }
 
     emit currentLibraryChanged();
+}
+
+void PlayerController::setRecentManager(RecentManager * manager)
+{
+    m_recentManager = manager;
 }
 
 void PlayerController::playFromModel(MusicLibraryModel * library,int index)
