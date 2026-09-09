@@ -4,6 +4,7 @@
 #include <QQuickStyle>
 #include "PlayerController.h"
 #include "MusicLibraryModel.h"
+#include <QDir>
 
 int main(int argc,char * argv[])
 {
@@ -12,11 +13,18 @@ int main(int argc,char * argv[])
     //创建音乐库Model
     MusicLibraryModel library;
     library.scanDirectory(R"(D:\Qt_Project\FluentWinUI_Musicplayer\qml\music_resource\loadmusic_by_default)");
+    //创建推荐音乐库 每次程序启动后重新抽取
+    MusicLibraryModel recommendLibrary;
+    QString recommendDir = R"(D:\Qt_Project\FluentWinUI_Musicplayer\downloaded_songs)";
+    if (!QDir(recommendDir).exists() || QDir(recommendDir).isEmpty())
+        recommendDir = R"(D:\Qt_Project\FluentWinUI_Musicplayer\qml\music_resource\loadmusic_by_default)";
+    recommendLibrary.scanRandomDirectory(recommendDir,42);
     //创建播放器
     PlayerController player(&library);
     QQmlApplicationEngine engine;       //创建QML引擎
     engine.rootContext()->setContextProperty("player",&player);
     engine.rootContext()->setContextProperty("musicLibrary",&library);
+    engine.rootContext()->setContextProperty("recommendLibrary",&recommendLibrary);
 
     QObject::connect(&engine,&QQmlApplicationEngine::objectCreationFailed,&app,
                      [](){QCoreApplication::exit(-1);},Qt::QueuedConnection);

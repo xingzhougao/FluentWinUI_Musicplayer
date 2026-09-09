@@ -18,6 +18,12 @@ ApplicationWindow {
     property int selectedNav: 0
     property bool lyricViewOpen: false
 
+    onSelectedNavChanged: {
+        if (typeof sideBar !== "undefined" && sideBar) {
+            sideBar.selectedIndex = window.selectedNav;
+        }
+    }
+
     readonly property color panelColor: "#101721"
     readonly property color panelColor2: "#131c27"
     readonly property color borderColor: "#1f2b3a"
@@ -73,6 +79,7 @@ ApplicationWindow {
                 visible: !window.lyricViewOpen
 
                 SideBar {
+                    id: sideBar
                     Layout.preferredWidth: implicitWidth
                     Layout.fillHeight: true
 
@@ -94,9 +101,25 @@ ApplicationWindow {
                         playerController: player
                         textPrimaryColor: window.textPrimaryColor
                         textSecondaryColor: window.textSecondaryColor
+                        onPlayRecommendRequested: {
+                            //1 为侧边栏推荐页面
+                            window.selectedNav = 1;
+                            sideBar.selectedIndex = 1;
+                            if(player && typeof recommendLibrary !== "undefined" && recommendLibrary.count > 0)
+                            {
+                                player.playFromModel(recommendLibrary,0);
+                            }
+                        }
                     }
 
-                    RecommendPage {}
+                    RecommendPage {
+                        playerController: player
+                        recommendModel: typeof recommendLibrary !== "undefined" ? recommendLibrary : null
+                        textPrimaryColor: window.textPrimaryColor
+                        textSecondaryColor: window.textSecondaryColor
+                        accentColor: window.accentColor
+                        borderColor: window.borderColor
+                    }
                     PlaylistPage {}
                     LocalMusicPage {
                         playerController: player

@@ -50,7 +50,6 @@ Rectangle{
                 selected: root.selectedIndex === index      // ===是比较
 
                 onClicked: {
-                    root.selectedIndex = index
                     root.navigationRequested(index)
                 }
             }
@@ -81,7 +80,6 @@ Rectangle{
             selected: root.selectedIndex === 5
 
             onClicked: {
-                root.selectedIndex = 5
                 root.navigationRequested(5)
             }
         }
@@ -95,7 +93,6 @@ Rectangle{
             selected: root.selectedIndex === 6
 
             onClicked: {
-                root.selectedIndex = 6
                 root.navigationRequested(6)
             }
         }

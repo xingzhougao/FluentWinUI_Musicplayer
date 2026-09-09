@@ -11,6 +11,8 @@ Item {
     property color textSecondaryColor: "#8c99aa"
     property url bannerSource: "../image_resource/banner.png"
 
+    signal playRecommendRequested()
+
     ScrollView {
         id: contentScroll
         anchors.fill: parent
@@ -143,8 +145,9 @@ Item {
                                 }
 
                                 onClicked: {
-                                    if(!root.playerController.playing)
-                                        root.playerController.togglePlay()
+                                    // if(!root.playerController.playing)
+                                    //     root.playerController.togglePlay()
+                                    root.playRecommendRequested()
                                 }
                             }
 

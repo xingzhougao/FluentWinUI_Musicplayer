@@ -5,6 +5,7 @@
 #include <QTextStream>
 #include <QRegularExpression>
 #include <algorithm>
+#include <QRandomGenerator>
 
 MusicLibraryModel::MusicLibraryModel(QObject * parent) : QAbstractListModel(parent){}
 
@@ -211,3 +212,99 @@ void MusicLibraryModel::setLyrics(int index,const QVector<LyricLine> &lyrics)
     m_tracks[index].lyrics = lyrics;
 }
 
+void MusicLibraryModel::scanRandomDirectory(const QString & directory,int count)
+{
+    beginResetModel();
+    m_tracks.clear();
+    QStringList filters = { "*.mp3","*.flac","*.wav","*.ogg" };
+    QDirIterator iterator(directory,filters,QDir::Files,QDirIterator::Subdirectories);
+    QStringList allFiles;
+    while(iterator.hasNext())
+    {
+        allFiles.append(iterator.next());
+    }
+
+    if(allFiles.isEmpty())
+    {
+        endResetModel();
+        emit countChanged();
+        return;
+    }
+
+    //使用Qt全局随机生成器将所有歌曲文件打乱
+    std::shuffle(allFiles.begin(),allFiles.end(),*QRandomGenerator::global());
+
+    //最多截取count首 (例如42首)
+    int pickCount = qMin(count,allFiles.size());
+    for(int i = 0; i < pickCount; ++i)
+    {
+        const QString & filePath = allFiles[i];
+        QFileInfo info(filePath);
+        MusicTrack track;
+        track.filePath = info.absoluteFilePath();
+        QString baseName = info.completeBaseName();
+        QStringList parts = baseName.split(" - ");
+        if(parts.size() >= 3)
+        {
+            //001 晴天 周杰伦
+            track.title = parts[1].trimmed();
+            track.artist = parts[2].trimmed();
+            track.album = track.title + " (单曲)";
+        }
+        else if(parts.size() == 2)
+        {
+            //晴天 周杰伦
+            track.title = parts[0].trimmed();
+            track.artist = parts[1].trimmed();
+            track.album = track.title + " (单曲)";
+        }
+        else
+        {
+            track.title = baseName;
+            track.artist = "未知歌手";
+            track.album = "热门单曲";
+        }
+
+        //解析同名 .lrc 获取歌曲时长
+        QString lrcPath = info.absolutePath() + "/" + baseName + ".lrc";
+        QFile lrcFile(lrcPath);
+        if(lrcFile.exists() && lrcFile.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            QTextStream stream(&lrcFile);
+            static const QRegularExpression regex(R"(\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\])");
+            qint64 lastTime = 0;
+            while(!stream.atEnd())
+            {
+                QString line = stream.readLine();
+                auto match = regex.match(line);
+                if(match.hasMatch())
+                {
+                    qint64 minutes = match.captured(1).toLongLong();
+                    qint64 seconds = match.captured(2).toLongLong();
+                    qint64 ms = 0;
+                    if(match.captured(3).length() == 2)
+                        ms = match.captured(3).toLongLong() * 10;
+                    else if(match.captured(3).length() == 3)
+                        ms = match.captured(3).toLongLong();
+                    qint64 totalMs = (minutes * 60 + seconds) * 1000 + ms;
+                    if(totalMs > lastTime)
+                        lastTime = totalMs;
+                }
+            }
+            if(lastTime > 0)
+            {
+                //歌词最后一行多持续3秒
+                track.duration = lastTime + 3000;
+            }
+            lrcFile.close();
+        }
+        //无歌词时的估算兜底
+        if(track.duration <= 0 && info.size() > 0)
+        {
+            track.duration = (info.size() / 16000) * 1000;
+        }
+        m_tracks.append(track);
+    }
+    endResetModel();
+    emit countChanged();
+}

@@ -31,6 +31,8 @@ public:
 
     //扫描一个音乐目录
     Q_INVOKABLE void scanDirectory(const QString & directory);
+    //可以在指定目录中随机抽取固定数量歌曲的接口
+    Q_INVOKABLE void scanRandomDirectory(const QString & directory, int count = 42);
     //喜欢/取消喜欢
     Q_INVOKABLE void toggleFavorite(int index);
     //获取歌曲

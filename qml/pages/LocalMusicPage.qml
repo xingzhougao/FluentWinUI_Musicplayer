@@ -123,7 +123,7 @@ Item {
                 onClicked: {
                     if(root.playerController && root.musicModel && root.musicModel.count > 0)
                     {
-                        root.playerController.playIndex(0);
+                        root.playerController.playFromModel(root.musicModel,0);
                     }
                 }
             }
@@ -261,7 +261,7 @@ Item {
                 height: 56
                 radius: 8
 
-                readonly property bool isCurrent: root.playerController && root.playerController.currentIndex === index
+                readonly property bool isCurrent: root.playerController && root.playerController.currentLibrary === root.musicModel && root.playerController.currentIndex === index
                 readonly property bool isPlaying: isCurrent && root.playerController.playing
 
                 color: isCurrent ? "#162438" : (rowMouse.containsMouse ? "#111a26" : "transparent")
@@ -391,7 +391,7 @@ Item {
 
                     onClicked: {
                         if (root.playerController)
-                            root.playerController.playIndex(index);
+                            root.playerController.playFromModel(root.musicModel,index);
                     }
                 }
             }

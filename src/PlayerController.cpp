@@ -11,7 +11,7 @@
 #include <QRegularExpression>
 #include <algorithm>
 
-PlayerController::PlayerController(MusicLibraryModel * library,QObject * parent): QObject(parent),m_library(library),m_player(new QMediaPlayer(this)),m_audioOutput(new QAudioOutput(this))
+PlayerController::PlayerController(MusicLibraryModel * library,QObject * parent): QObject(parent),m_player(new QMediaPlayer(this)),m_audioOutput(new QAudioOutput(this))
 {
     m_player->setAudioOutput(m_audioOutput);        //设置音频播放器
     m_audioOutput->setVolume(0.7);                  //设置音量
@@ -54,36 +54,7 @@ PlayerController::PlayerController(MusicLibraryModel * library,QObject * parent)
         emit mutedChanged();
     });
     //MusicLibraryModel 当前歌曲数据变化 PlayerController的title / artist属性也需要通知QML更新
-    if(m_library)
-    {
-        connect(m_library,&MusicLibraryModel::dataChanged,this,[this](const QModelIndex & topLeft,const QModelIndex & bottomRight,const QList<int> &){
-            if(m_index < 0)
-                return;
-            if(m_index >= topLeft.row() && m_index <= bottomRight.row())
-            {
-                emit trackChanged();
-                emit favoriteChanged();     //列表点赞时 通知底层Playbar刷新
-            }
-        });
-    }
-    //MusicLibraryModel 重新扫描歌曲后 原来的m_index就不应该继续使用
-    connect(m_library,&MusicLibraryModel::modelReset,this,[this](){
-        m_player->stop();
-        m_player->setSource(QUrl());
-        m_index = -1;
-        m_currentLyric.clear();
-        m_currentLyricIndex = -1;
-        m_lyricList.clear();
-        emit currentIndexChanged();
-        emit trackChanged();
-        emit positionChanged();
-        emit durationChanged();
-        emit progressChanged();
-        emit currentLyricChanged();
-        emit currentLyricIndexChanged();
-        emit lyricListChanged();
-    });
-
+    setLibrary(library);
     if(m_library && m_library->count() > 0)
         selectTrack(0,true);
 }
@@ -561,4 +532,62 @@ void PlayerController::updateCurrentLyric(qint64 position)
         return;
     m_currentLyric = lyric;
     emit currentLyricChanged();
+}
+
+MusicLibraryModel * PlayerController::currentLibrary() const
+{
+    return m_library;
+}
+
+void PlayerController::setLibrary(MusicLibraryModel * library)
+{
+    if(m_library == library)
+        return;
+
+    if(m_library)
+        //解绑旧模型信号连接
+        disconnect(m_library,nullptr,this,nullptr);
+
+    m_library = library;
+    if(m_library)
+    {
+        //监听新模型的数据变化 例如点赞 通知QML界面与playbar刷新
+        connect(m_library,&MusicLibraryModel::dataChanged,this,[this](const QModelIndex & topLeft,const QModelIndex & bottomRight,const QList<int> &){
+            if(m_index < 0)
+                return;
+            if(m_index >= topLeft.row() && m_index <= bottomRight.row())
+            {
+                emit trackChanged();
+                emit favoriteChanged();
+            }
+        });
+        //监听新模型的重置
+        connect(m_library,&MusicLibraryModel::modelReset,this,[this](){
+            m_player->stop();
+            m_player->setSource(QUrl());
+            m_index = -1;
+            m_currentLyric.clear();
+            m_currentLyricIndex = -1;
+            m_lyricList.clear();
+            emit currentIndexChanged();
+            emit trackChanged();
+            emit positionChanged();
+            emit durationChanged();
+            emit progressChanged();
+            emit currentLyricChanged();
+            emit currentLyricIndexChanged();
+            emit lyricListChanged();
+        });
+    }
+
+    emit currentLibraryChanged();
+}
+
+void PlayerController::playFromModel(MusicLibraryModel * library,int index)
+{
+    if(!library)
+        return;
+    if(m_library != library)
+        setLibrary(library);
+    selectTrack(index,true);
 }

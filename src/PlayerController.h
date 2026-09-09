@@ -26,6 +26,7 @@ class PlayerController : public QObject
     Q_PROPERTY(QString currentLyric READ currentLyric NOTIFY currentLyricChanged)
     Q_PROPERTY(QVariantList lyricList READ lyricList NOTIFY lyricListChanged)
     Q_PROPERTY(int currentLyricIndex READ currentLyricIndex NOTIFY currentLyricIndexChanged)
+    Q_PROPERTY(MusicLibraryModel* currentLibrary READ currentLibrary NOTIFY currentLibraryChanged)
 
 public:
     explicit PlayerController(MusicLibraryModel * library,QObject * parent = nullptr);
@@ -43,6 +44,8 @@ public:
     bool favorite() const;
     int playMode() const;
     int currentIndex() const;
+    MusicLibraryModel * currentLibrary() const;
+    void setLibrary(MusicLibraryModel * library);
     Q_INVOKABLE void togglePlay();
     Q_INVOKABLE void next();
     Q_INVOKABLE void previous();
@@ -53,6 +56,7 @@ public:
     Q_INVOKABLE QString formatTime(qint64 milliseconds) const;
     Q_INVOKABLE void seek(qint64 milliseconds);
     Q_INVOKABLE void seekToLyric(int index);
+    Q_INVOKABLE void playFromModel(MusicLibraryModel * library,int index);
 
 public slots:
     void setProgress(double value);
@@ -75,6 +79,7 @@ signals:
     void lyricListChanged();
     void currentLyricIndexChanged();
     void playbackError(const QString &message);
+    void currentLibraryChanged();
 
 private:
     void selectTrack(int index,bool autoPlay = true);
