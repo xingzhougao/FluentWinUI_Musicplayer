@@ -134,8 +134,11 @@ ApplicationWindow {
 
                     DiscoverPage {
                         playerController: player
+                        recentModel: typeof recentLibrary !== "undefined" ? recentLibrary : null
+                        favoriteMgr: typeof favoriteManager !== "undefined" ? favoriteManager : null
                         textPrimaryColor: window.textPrimaryColor
                         textSecondaryColor: window.textSecondaryColor
+                        accentColor: window.accentColor
                         onPlayRecommendRequested: {
                             //1 为侧边栏推荐页面
                             window.selectedNav = 1;
@@ -144,6 +147,11 @@ ApplicationWindow {
                             {
                                 player.playFromModel(recommendLibrary,0);
                             }
+                        }
+                        onViewAllRecentRequested: {
+                            //4 为侧边栏最近播放页面
+                            window.selectedNav = 4;
+                            sideBar.selectedIndex = 4;
                         }
                     }
 

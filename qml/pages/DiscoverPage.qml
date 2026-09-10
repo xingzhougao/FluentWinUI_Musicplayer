@@ -7,11 +7,15 @@ Item {
     id: root
 
     required property var playerController
+    property var recentModel: typeof recentLibrary !== "undefined" ? recentLibrary : null
+    property var favoriteMgr: typeof favoriteManager !== "undefined" ? favoriteManager : null
     property color textPrimaryColor: "#f5f7fb"
     property color textSecondaryColor: "#8c99aa"
+    property color accentColor: "#6ea8ff"
     property url bannerSource: "../image_resource/banner.png"
 
     signal playRecommendRequested()
+    signal viewAllRecentRequested()
 
     ScrollView {
         id: contentScroll
@@ -150,27 +154,6 @@ Item {
                                     root.playRecommendRequested()
                                 }
                             }
-
-                            Button {
-                                id: bannerFav
-                                text: "♡  收藏"
-                                width: 92
-                                height: 38
-
-                                background: Rectangle {
-                                    radius: 19
-                                    color: bannerFav.hovered ? "#24ffffff" : "#16ffffff"
-                                    border.color: "#38ffffff"
-                                }
-
-                                contentItem: Text{
-                                    text: bannerFav.text
-                                    color: "#eef5ff"
-                                    font.pixelSize: 12
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                            }
                         }
                     }
 
@@ -271,38 +254,94 @@ Item {
                     id: moreButton
                     text: "查看全部 ->"
                     background: null
+                    hoverEnabled: true
 
                     contentItem: Text {
                         text: moreButton.text
                         color: moreButton.hovered ? "#9dc3ff" : "#7891b0"
                         font.pixelSize: 12
+                        font.weight: Font.Medium
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.viewAllRecentRequested()
                     }
                 }
             }
 
-            Column {
+            // 空状态提示
+            Rectangle {
                 width: parent.width
-                spacing: 8
+                height: 80
+                radius: 14
+                color: "#101925"
+                border.color: "#1c293a"
+                border.width: 1
+                visible: !root.recentModel || root.recentModel.count === 0
 
-                Repeater {
-                    model: [
-                        { n: "01", title: "Midnight Drive",artist: "Luna Waves",album: "Neon Highway",time:"03:42"},
-                        { n: "02", title: "Falling Slowly",artist: "Mira",album: "Aftergolow",time:"04:10"},
-                        { n: "03", title: "Blue Avenue",artist: "North Avenue",album: "City Line",time: "03.18"},
-                        { n: "04", title: "Soft Signals",artist: "Velvet Echo",album: "Signal Bloom",time: "02:58"}
-                    ]
+                RowLayout {
+                    anchors.centerIn: parent
+                    spacing: 12
 
-                    delegate: MusicRow{
-                        required property var modelData
+                    Text {
+                        text: "♫"
+                        color: root.accentColor
+                        font.pixelSize: 22
+                        opacity: 0.7
+                    }
 
+                    Text {
+                        text: "暂无最近播放记录，快去听听音乐吧~"
+                        color: root.textSecondaryColor
+                        font.pixelSize: 13
+                    }
+                }
+            }
+
+            // 最近播放前5首列表
+            ListView {
+                id: recentListView
+                width: parent.width
+                height: Math.min(5, count) * 68
+                interactive: false
+                clip: true
+                model: root.recentModel
+                visible: root.recentModel && root.recentModel.count > 0
+
+                delegate: Item {
+                    width: recentListView.width
+                    height: index < 5 ? 68 : 0
+                    visible: index < 5
+
+                    MusicRow {
                         width: parent.width
-                        numberText: modelData.n
-                        title: modelData.title
-                        artist: modelData.artist
-                        album: modelData.album
-                        durationText: modelData.time
+                        height: 60
+                        anchors.top: parent.top
+                        numberText: (index + 1 < 10 ? "0" : "") + (index + 1)
+                        title: model.title || "未知歌曲"
+                        artist: model.artist || "未知歌手"
+                        album: model.album || ""
+                        durationText: root.playerController ? root.playerController.formatTime(model.duration) : "03:45"
+                        favorite: model.favorite || false
+                        isCurrent: root.playerController && root.playerController.currentLibrary === root.recentModel && root.playerController.currentIndex === index
+                        isPlaying: isCurrent && root.playerController.playing
                         textPrimaryColor: root.textPrimaryColor
                         textSecondaryColor: root.textSecondaryColor
+                        accentColor: root.accentColor
+
+                        onPlayRequested: {
+                            if (root.playerController && root.recentModel) {
+                                root.playerController.playFromModel(root.recentModel, index);
+                            }
+                        }
+
+                        onFavoriteToggled: {
+                            if (root.recentModel) {
+                                root.recentModel.toggleFavorite(index);
+                            }
+                        }
                     }
                 }
             }

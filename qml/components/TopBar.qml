@@ -404,42 +404,6 @@ Rectangle{
         }
 
         Item{ Layout.fillWidth: true}
-        Button{
-            id: premiumButton
-            text: "升级Premium"
-            Layout.preferredHeight: 36
-            Layout.preferredWidth: 116
-
-            background: Rectangle{                  //自定义按钮背景
-                radius: 18
-                color: premiumButton.hovered ? "#263750" : "#1b293b"  //判断鼠标是否在按钮上悬停
-                border.color: "#314968"
-            }
-
-            contentItem: Text{                      //自定义按钮文字
-                text: premiumButton.text
-                color: "#cfe0ff"
-                font.pixelSize: 12
-                horizontalAlignment: Text.AlignHCenter  //水平对齐:水平居中对齐
-                verticalAlignment: Text.AlignVCenter
-            }
-        }
-
-        Rectangle{
-            width: 38
-            height: 38
-            radius: 19
-            color: "#27364a"
-            border.color: "#3a4d66"
-
-            Text{
-                anchors.centerIn: parent
-                text: "G"
-                color: "#ffffff"
-                font.pixelSize: 14
-                font.weight: Font.DemiBold
-            }
-        }
 
         Button{
             id: settingButton
