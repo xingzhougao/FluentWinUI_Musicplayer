@@ -52,6 +52,8 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
         src/Lyric.h
         src/FavoriteManager.h
         src/FavoriteManager.cpp
+        src/AppConfig.h
+        src/AppConfig.cpp
 
     RESOURCES
         qml/icons/download_manager.svg

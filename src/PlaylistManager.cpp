@@ -1,12 +1,13 @@
 #include "PlaylistManager.h"
 #include "FavoriteManager.h"
-
+#include "AppConfig.h"
 #include <QCoreApplication>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QSettings>
 #include <QDateTime>
 #include <QRegularExpression>
 #include <QTextStream>
@@ -180,7 +181,7 @@ bool PlaylistManager::playlistContainsTrack(const QString & playlistId, const QS
 
 QString PlaylistManager::getSaveFilePath() const
 {
-    return QCoreApplication::applicationDirPath() + QStringLiteral("/playlists.json");
+    return AppConfig::instance().playlistsIniPath();
 }
 
 MusicTrack PlaylistManager::resolveTrackFromFile(const QString & filePath) const
@@ -260,48 +261,118 @@ MusicTrack PlaylistManager::resolveTrackFromFile(const QString & filePath) const
 void PlaylistManager::loadPlaylists()
 {
     QString path = getSaveFilePath();
-    QFile file(path);
-    if (!file.exists() || !file.open(QIODevice::ReadOnly))
-        return;
+    m_playlists.clear();
 
-    QByteArray data = file.readAll();
-    file.close();
-
-    QJsonDocument doc = QJsonDocument::fromJson(data);
-    if (!doc.isArray())
-        return;
-
-    QJsonArray array = doc.array();
-    for (const QJsonValue & val : array)
-    {
-        if (!val.isObject())
-            continue;
-        QJsonObject obj = val.toObject();
-
-        PlaylistEntry entry;
-        entry.id = obj[QStringLiteral("id")].toString();
-        entry.name = obj[QStringLiteral("name")].toString();
-        entry.coverUrl = obj[QStringLiteral("coverUrl")].toString();
-        entry.model = new MusicLibraryModel(this);
-        if(m_favoriteManager)
+    auto parseJsonData = [this](const QByteArray & data) -> bool {
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+        if (!doc.isArray())
+            return false;
+        QJsonArray array = doc.array();
+        for (const QJsonValue & val : array)
         {
-            m_favoriteManager->registerModel(entry.model);
-        }
-        QJsonArray songs = obj[QStringLiteral("songs")].toArray();
-        for (const QJsonValue & sVal : songs)
-        {
-            QString sPath = sVal.toString();
-            if (!sPath.isEmpty())
+            if (!val.isObject())
+                continue;
+            QJsonObject obj = val.toObject();
+
+            PlaylistEntry entry;
+            entry.id = obj[QStringLiteral("id")].toString();
+            entry.name = obj[QStringLiteral("name")].toString();
+            entry.coverUrl = obj[QStringLiteral("coverUrl")].toString();
+            entry.model = new MusicLibraryModel(this);
+            if (m_favoriteManager)
             {
-                MusicTrack track = resolveTrackFromFile(sPath);
-                if (!track.filePath.isEmpty())
+                m_favoriteManager->registerModel(entry.model);
+            }
+            QJsonArray songs = obj[QStringLiteral("songs")].toArray();
+            for (const QJsonValue & sVal : songs)
+            {
+                QString sPath = sVal.toString();
+                if (!sPath.isEmpty())
                 {
-                    entry.model->appendTrack(track);
+                    MusicTrack track = resolveTrackFromFile(sPath);
+                    if (!track.filePath.isEmpty())
+                    {
+                        entry.model->appendTrack(track);
+                    }
                 }
+            }
+            m_playlists.append(entry);
+        }
+        return true;
+    };
+
+    // 1. 如果指定路径文件已存在
+    if (QFile::exists(path))
+    {
+        if (path.endsWith(QStringLiteral(".json"), Qt::CaseInsensitive))
+        {
+            QFile file(path);
+            if (file.open(QIODevice::ReadOnly))
+            {
+                parseJsonData(file.readAll());
+                file.close();
+                return;
             }
         }
 
-        m_playlists.append(entry);
+        // 按 INI 格式加载
+        QSettings settings(path, QSettings::IniFormat);
+        int pSize = settings.beginReadArray(QStringLiteral("playlists"));
+        for (int i = 0; i < pSize; ++i)
+        {
+            settings.setArrayIndex(i);
+            PlaylistEntry entry;
+            entry.id = settings.value(QStringLiteral("id")).toString();
+            entry.name = settings.value(QStringLiteral("name")).toString();
+            entry.coverUrl = settings.value(QStringLiteral("coverUrl")).toString();
+            entry.model = new MusicLibraryModel(this);
+            if (m_favoriteManager)
+            {
+                m_favoriteManager->registerModel(entry.model);
+            }
+
+            int sSize = settings.beginReadArray(QStringLiteral("songs"));
+            for (int j = 0; j < sSize; ++j)
+            {
+                settings.setArrayIndex(j);
+                QString sPath = settings.value(QStringLiteral("filePath")).toString();
+                if (!sPath.isEmpty())
+                {
+                    MusicTrack track = resolveTrackFromFile(sPath);
+                    if (!track.filePath.isEmpty())
+                    {
+                        entry.model->appendTrack(track);
+                    }
+                }
+            }
+            settings.endArray();
+
+            m_playlists.append(entry);
+        }
+        settings.endArray();
+        return;
+    }
+
+    // 2. 兼容历史数据：检查是否存在旧版 playlists.json，若存在则导入并平滑迁移到 INI
+    QFileInfo fileInfo(path);
+    QString legacyJsonPath = fileInfo.absolutePath() + QStringLiteral("/playlists.json");
+    if (!QFile::exists(legacyJsonPath))
+    {
+        legacyJsonPath = QCoreApplication::applicationDirPath() + QStringLiteral("/playlists.json");
+    }
+
+    if (QFile::exists(legacyJsonPath))
+    {
+        QFile file(legacyJsonPath);
+        if (file.open(QIODevice::ReadOnly))
+        {
+            if (parseJsonData(file.readAll()))
+            {
+                qDebug() << "[PlaylistManager] 从历史 JSON 导入" << m_playlists.size() << "个歌单，并自动转换为 INI 格式保存";
+                savePlaylists();
+            }
+            file.close();
+        }
     }
 }
 
@@ -323,32 +394,63 @@ void PlaylistManager::setFavoriteManager(FavoriteManager * manager)
 void PlaylistManager::savePlaylists()
 {
     QString path = getSaveFilePath();
-    QFile file(path);
-    if (!file.open(QIODevice::WriteOnly))
-        return;
+    QFileInfo info(path);
+    QDir().mkpath(info.absolutePath());
 
-    QJsonArray array;
-    for (const auto & entry : m_playlists)
+    if (path.endsWith(QStringLiteral(".json"), Qt::CaseInsensitive))
     {
-        QJsonObject obj;
-        obj[QStringLiteral("id")] = entry.id;
-        obj[QStringLiteral("name")] = entry.name;
-        obj[QStringLiteral("coverUrl")] = entry.coverUrl;
+        QFile file(path);
+        if (!file.open(QIODevice::WriteOnly))
+            return;
 
-        QJsonArray songs;
-        if (entry.model)
+        QJsonArray array;
+        for (const auto & entry : m_playlists)
         {
-            const QStringList paths = entry.model->allFilePaths();
-            for (const QString & p : paths)
+            QJsonObject obj;
+            obj[QStringLiteral("id")] = entry.id;
+            obj[QStringLiteral("name")] = entry.name;
+            obj[QStringLiteral("coverUrl")] = entry.coverUrl;
+
+            QJsonArray songs;
+            if (entry.model)
             {
-                songs.append(p);
+                const QStringList paths = entry.model->allFilePaths();
+                for (const QString & p : paths)
+                {
+                    songs.append(p);
+                }
             }
+            obj[QStringLiteral("songs")] = songs;
+            array.append(obj);
         }
-        obj[QStringLiteral("songs")] = songs;
-        array.append(obj);
+
+        QJsonDocument doc(array);
+        file.write(doc.toJson(QJsonDocument::Indented));
+        file.close();
+        return;
     }
 
-    QJsonDocument doc(array);
-    file.write(doc.toJson(QJsonDocument::Indented));
-    file.close();
+    // 保存为标准 INI 格式
+    QSettings settings(path, QSettings::IniFormat);
+    settings.clear();
+    settings.beginWriteArray(QStringLiteral("playlists"), m_playlists.size());
+    for (int i = 0; i < m_playlists.size(); ++i)
+    {
+        settings.setArrayIndex(i);
+        const auto & entry = m_playlists[i];
+        settings.setValue(QStringLiteral("id"), entry.id);
+        settings.setValue(QStringLiteral("name"), entry.name);
+        settings.setValue(QStringLiteral("coverUrl"), entry.coverUrl);
+
+        QStringList paths = entry.model ? entry.model->allFilePaths() : QStringList();
+        settings.beginWriteArray(QStringLiteral("songs"), paths.size());
+        for (int j = 0; j < paths.size(); ++j)
+        {
+            settings.setArrayIndex(j);
+            settings.setValue(QStringLiteral("filePath"), paths[j]);
+        }
+        settings.endArray();
+    }
+    settings.endArray();
+    settings.sync();
 }

@@ -1,4 +1,5 @@
 #include "RecentManager.h"
+#include "AppConfig.h"
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
@@ -24,24 +25,7 @@ int RecentManager::count() const
 
 QString RecentManager::getIniPath() const
 {
-    QString configDir = QStringLiteral("D:/Qt_Project/FluentWinUI_Musicplayer/config");
-    if (!QDir(configDir).exists())
-    {
-        // 兼容其他机器或非 D 盘路径：尝试通过可执行文件向上推导工程根目录或 exe 同级 config
-        QString relProjectConfig = QDir::cleanPath(QCoreApplication::applicationDirPath() + QStringLiteral("/../../config"));
-        if (QDir(relProjectConfig).exists())
-        {
-            configDir = relProjectConfig;
-        }
-        else
-        {
-            configDir = QDir::cleanPath(QCoreApplication::applicationDirPath() + QStringLiteral("/config"));
-        }
-    }
-    QDir dir(configDir);
-    if (!dir.exists())
-        dir.mkpath(".");
-    return dir.filePath(QStringLiteral("recent_tracks.ini"));
+    return AppConfig::instance().recentTracksIniPath();
 }
 
 void RecentManager::recordTrack(const MusicTrack & track)

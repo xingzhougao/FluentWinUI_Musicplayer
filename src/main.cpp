@@ -7,21 +7,24 @@
 #include "PlaylistManager.h"
 #include "RecentManager.h"
 #include "FavoriteManager.h"
+#include "AppConfig.h"
 #include <QDir>
 
 int main(int argc,char * argv[])
 {
     QQuickStyle::setStyle("Basic");
     QGuiApplication app(argc,argv);
+
+    AppConfig & config = AppConfig::instance();
+
     //创建音乐库Model
     MusicLibraryModel library;
-    library.scanDirectory(R"(D:\Qt_Project\FluentWinUI_Musicplayer\qml\music_resource\loadmusic_by_default)");
+    library.scanDirectory(config.localMusicDir());
+
     //创建推荐音乐库 每次程序启动后重新抽取
     MusicLibraryModel recommendLibrary;
-    QString recommendDir = R"(D:\Qt_Project\FluentWinUI_Musicplayer\downloaded_songs)";
-    if (!QDir(recommendDir).exists() || QDir(recommendDir).isEmpty())
-        recommendDir = R"(D:\Qt_Project\FluentWinUI_Musicplayer\qml\music_resource\loadmusic_by_default)";
-    recommendLibrary.scanRandomDirectory(recommendDir,42);
+    recommendLibrary.scanRandomDirectory(config.recommendMusicDir(), config.recommendCount());
+
     //创建播放器
     PlayerController player(&library);
     //创建歌单管理器
@@ -44,6 +47,7 @@ int main(int argc,char * argv[])
     playlistManager.setFavoriteManager(&favoriteManager);
 
     QQmlApplicationEngine engine;       //创建QML引擎
+    engine.rootContext()->setContextProperty("appConfig", &config);
     engine.rootContext()->setContextProperty("player",&player);
     engine.rootContext()->setContextProperty("musicLibrary",&library);
     engine.rootContext()->setContextProperty("recommendLibrary",&recommendLibrary);

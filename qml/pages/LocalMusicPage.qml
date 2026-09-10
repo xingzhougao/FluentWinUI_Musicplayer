@@ -163,8 +163,11 @@ Item {
                 }
 
                 onClicked: {
-                    if(root.musicModel) {
-                        root.musicModel.scanDirectory("D:/Qt_Project/FluentWinUI_Musicplayer/qml/music_resource/loadmusic_by_default");
+                    if (root.musicModel) {
+                        var dir = (typeof appConfig !== "undefined" && appConfig.localMusicDir) ? appConfig.localMusicDir : "";
+                        if (dir !== "") {
+                            root.musicModel.scanDirectory(dir);
+                        }
                     }
                 }
             }

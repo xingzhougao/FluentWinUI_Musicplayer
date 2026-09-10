@@ -1,5 +1,6 @@
 #include "FavoriteManager.h"
 #include "MusicLibraryModel.h"
+#include "AppConfig.h"
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
@@ -25,22 +26,7 @@ int FavoriteManager::count() const
 
 QString FavoriteManager::getIniPath() const
 {
-    QString configDir = QStringLiteral("D:/Qt_Project/FluentWinUI_Musicplayer/config");
-    if(!QDir(configDir).exists())
-    {
-        //兼容其他机器 解决真实路径不一致的情况
-        QString relProjectConfig = QDir::cleanPath(QCoreApplication::applicationDirPath() + QStringLiteral("/../../config"));
-        if(QDir(relProjectConfig).exists())
-        {
-            configDir = relProjectConfig;
-        }else {
-            configDir = QDir::cleanPath(QCoreApplication::applicationDirPath() + QStringLiteral("/config"));
-        }
-    }
-    QDir dir(configDir);
-    if(!dir.exists())
-        dir.mkpath(".");
-    return dir.filePath(QStringLiteral("favorites.ini"));
+    return AppConfig::instance().favoritesIniPath();
 }
 
 bool FavoriteManager::isFavorite(const QString & filePath) const
