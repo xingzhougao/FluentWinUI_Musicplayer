@@ -1,4 +1,4 @@
-﻿import QtQuick
+import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
@@ -297,21 +297,19 @@ Item {
             delegate: Rectangle {
                 id: rowRect
                 width: songListView.width
-                height: 48
-                radius: 6
+                height: 56
+                radius: 8
 
                 readonly property bool isCurrent: root.playerController &&
                                                  root.playerController.currentLibrary === root.recentModel &&
                                                  root.playerController.currentIndex === index
                 readonly property bool isPlaying: isCurrent && root.playerController.playing
 
-                color: {
-                    if (isCurrent) return "#1e3352";
-                    if (rowMouseArea.containsMouse) return "#162334";
-                    return index % 2 === 0 ? "transparent" : "#080d14";
-                }
+                color: isCurrent ? "#162438" : (rowMouseArea.containsMouse ? "#111a26" : "transparent")
+                border.color: isCurrent ? "#244068" : (rowMouseArea.containsMouse ? "#1a2a3e" : "transparent")
+                border.width: 1
 
-                Behavior on color { ColorAnimation { duration: 100 } }
+                Behavior on color { ColorAnimation { duration: 120 } }
 
                 RowLayout {
                     anchors.fill: parent
@@ -319,36 +317,39 @@ Item {
                     anchors.rightMargin: 16
                     spacing: 12
 
-                    // 序号或正在播放指示
+                    // 封面缩略图与序号
                     Item {
                         Layout.preferredWidth: 46
-                        Layout.fillHeight: true
+                        Layout.preferredHeight: 40
 
-                        Text {
+                        Rectangle {
+                            id: coverBox
+                            width: 38
+                            height: 38
+                            radius: 7
                             anchors.centerIn: parent
-                            visible: !rowRect.isCurrent
-                            text: (index + 1) < 10 ? "0" + (index + 1) : (index + 1)
-                            color: "#4d6075"
-                            font.pixelSize: 13
-                            font.weight: Font.Medium
-                        }
+                            clip: true
 
-                        // 正在播放动效音波柱
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 2
-                            visible: rowRect.isCurrent
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: rowRect.isCurrent ? "#2a4b7c" : (rowMouseArea.containsMouse ? "#1f385c" : "#17263b") }
+                                GradientStop { position: 1.0; color: rowRect.isCurrent ? "#55387a" : (rowMouseArea.containsMouse ? "#392454" : "#271a39") }
+                            }
 
-                            Repeater {
-                                model: 3
-                                Rectangle {
-                                    width: 3
-                                    height: rowRect.isPlaying ? (index === 1 ? 14 : 9) : 4
-                                    radius: 1.5
-                                    color: root.accentColor
-                                    anchors.verticalCenter: parent ? parent.verticalCenter : undefined
-                                    Behavior on height { NumberAnimation { duration: 200 } }
-                                }
+                            Text {
+                                anchors.centerIn: parent
+                                visible: !rowMouseArea.containsMouse && !rowRect.isPlaying
+                                text: (index + 1 < 10 ? "0" : "") + (index + 1)
+                                color: rowRect.isCurrent ? root.accentColor : "#5b6d82"
+                                font.pixelSize: 11
+                                font.weight: Font.Medium
+                            }
+
+                            Text {
+                                anchors.centerIn: parent
+                                visible: rowMouseArea.containsMouse || rowRect.isPlaying
+                                text: rowRect.isPlaying ? "❚❚" : "▶"
+                                color: "white"
+                                font.pixelSize: rowRect.isPlaying ? 10 : 12
                             }
                         }
                     }
@@ -359,49 +360,47 @@ Item {
                         spacing: 2
 
                         Text {
+                            Layout.fillWidth: true
                             text: model.title || "未知曲目"
                             color: rowRect.isCurrent ? root.accentColor : root.textPrimaryColor
                             font.pixelSize: 13
-                            font.weight: rowRect.isCurrent ? Font.DemiBold : Font.Normal
+                            font.weight: rowRect.isCurrent ? Font.Bold : Font.DemiBold
                             elide: Text.ElideRight
-                            Layout.fillWidth: true
                         }
 
                         Text {
+                            Layout.fillWidth: true
                             text: model.artist || "未知歌手"
-                            color: rowRect.isCurrent ? Qt.lighter(root.accentColor, 1.2) : root.textSecondaryColor
+                            color: root.textSecondaryColor
                             font.pixelSize: 11
                             elide: Text.ElideRight
-                            Layout.fillWidth: true
                         }
                     }
 
-                    // 喜欢心形按钮
-                    Rectangle {
-                        id: heartBox
-                        Layout.preferredWidth: 28
-                        Layout.preferredHeight: 28
-                        radius: 14
-                        color: heartMouse.containsMouse ? "#203045" : "transparent"
+                    // 是否点赞的红心图标
+                    Button {
+                        id: heartBtn
+                        Layout.preferredWidth: 36
+                        Layout.preferredHeight: 36
+                        background: null
 
-                        Image {
-                            anchors.centerIn: parent
-                            width: 16
-                            height: 16
-                            source: model.favorite ? "../icons/like.svg" : "../icons/cancel_like_blue.svg"
-                            fillMode: Image.PreserveAspectFit
-                            mipmap: true
+                        contentItem: Item {
+                            Image {
+                                anchors.centerIn: parent
+                                source: model.favorite ? "../icons/like.svg" : "../icons/cancel_like_blue.svg"
+                                sourceSize.width: 20
+                                sourceSize.height: 20
+                                fillMode: Image.PreserveAspectFit
+                                opacity: model.favorite ? 1.0 : (heartBtn.hovered ? 1.0 : 0.85)
+                                scale: heartBtn.pressed ? 0.85 : (heartBtn.hovered ? 1.15 : 1.0)
+                                Behavior on scale { NumberAnimation { duration: 100 } }
+                                Behavior on opacity { NumberAnimation { duration: 100 } }
+                            }
                         }
 
-                        MouseArea {
-                            id: heartMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (root.recentModel) {
-                                    root.recentModel.toggleFavorite(index);
-                                }
+                        onClicked: {
+                            if (root.recentModel) {
+                                root.recentModel.toggleFavorite(index);
                             }
                         }
                     }
@@ -409,8 +408,8 @@ Item {
                     // 专辑名
                     Text {
                         Layout.preferredWidth: 220
-                        text: model.album || "未知专辑"
-                        color: "#6b7c91"
+                        text: model.album || (model.title + " (单曲)")
+                        color: "#728398"
                         font.pixelSize: 12
                         elide: Text.ElideRight
                     }
@@ -420,8 +419,9 @@ Item {
                         Layout.preferredWidth: 70
                         horizontalAlignment: Text.AlignRight
                         text: root.playerController ? root.playerController.formatTime(model.duration) : "03:45"
-                        color: rowRect.isCurrent ? root.accentColor : "#4d6075"
+                        color: rowRect.isCurrent ? root.accentColor : "#728398"
                         font.pixelSize: 12
+                        font.weight: rowRect.isCurrent ? Font.Medium : Font.Normal
                     }
                 }
 
