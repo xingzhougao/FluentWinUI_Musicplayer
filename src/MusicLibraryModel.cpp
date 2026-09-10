@@ -444,3 +444,26 @@ void MusicLibraryModel::clear()
     emit countChanged();
 }
 
+void MusicLibraryModel::searchFromModel(MusicLibraryModel * sourceModel, const QString & keyword)
+{
+    beginResetModel();
+    m_tracks.clear();
+
+    QString trimmed = keyword.trimmed();
+    if (sourceModel && !trimmed.isEmpty()) {
+        for (int i = 0; i < sourceModel->rowCount(); ++i) {
+            MusicTrack t = sourceModel->trackAt(i);
+            if (t.title.contains(trimmed, Qt::CaseInsensitive) ||
+                t.artist.contains(trimmed, Qt::CaseInsensitive) ||
+                t.album.contains(trimmed, Qt::CaseInsensitive)) {
+                if (m_favoriteManager) {
+                    t.favorite = m_favoriteManager->isFavorite(t.filePath);
+                }
+                m_tracks.append(t);
+            }
+        }
+    }
+
+    endResetModel();
+    emit countChanged();
+}

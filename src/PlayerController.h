@@ -100,6 +100,7 @@ private:
     QMediaPlayer * m_player = nullptr;
     QAudioOutput * m_audioOutput = nullptr;
     int m_index = -1;
+    MusicTrack m_currentTrack;
     //0 顺序 1随机 2单曲循环
     int m_playMode = 0;
     QString m_currentLyric;

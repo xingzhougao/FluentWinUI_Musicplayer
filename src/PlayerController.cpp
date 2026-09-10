@@ -63,22 +63,18 @@ PlayerController::PlayerController(MusicLibraryModel * library,QObject * parent)
 
 QString PlayerController::title() const
 {
-    if(!m_library)
-        return {};
-    if(m_index < 0 || m_index >= m_library->count())
-        return {};
+    if(m_library && m_index >= 0 && m_index < m_library->count())
+        return m_library->trackAt(m_index).title;
 
-    return m_library->trackAt(m_index).title;
+    return m_currentTrack.title;
 }
 
 QString PlayerController::artist() const
 {
-    if(!m_library)
-        return {};
-    if(m_index < 0 || m_index >= m_library->count())
-        return {};
+    if(m_library && m_index >= 0 && m_index < m_library->count())
+        return m_library->trackAt(m_index).artist;
 
-    return m_library->trackAt(m_index).artist;
+    return m_currentTrack.artist;
 }
 
 //当前是否正在播放
@@ -243,6 +239,8 @@ void PlayerController::selectTrack(int index,bool autoplay)
     if(track.filePath.isEmpty())
         return;
 
+    m_currentTrack = track;
+
     //修改当前歌曲索引
     if(m_index != index)
     {
@@ -321,6 +319,10 @@ void PlayerController::readMetaData()
         musicDuration = metaData.value(QMediaMetaData::Duration).toLongLong();
     //更新MusicLibraryModel
     m_library->updateMetadata(m_index,title,artist,album,musicDuration);
+    if (!title.isEmpty()) m_currentTrack.title = title;
+    if (!artist.isEmpty()) m_currentTrack.artist = artist;
+    if (!album.isEmpty()) m_currentTrack.album = album;
+    if (musicDuration > 0) m_currentTrack.duration = musicDuration;
 }
 
 //当前歌曲自然播放结束
@@ -361,33 +363,48 @@ void PlayerController::playIndex(int index)
 
 bool PlayerController::favorite() const
 {
-    if(!m_library)
-        return false;
-
-    if(m_index < 0 || m_index >= m_library->count())
-        return false;
-
     if(m_favoriteManager)
-        return m_favoriteManager->isFavorite(m_library->trackAt(m_index).filePath);
+    {
+        if(m_library && m_index >= 0 && m_index < m_library->count())
+            return m_favoriteManager->isFavorite(m_library->trackAt(m_index).filePath);
 
-    return m_library->trackAt(m_index).favorite;
+        if(!m_currentTrack.filePath.isEmpty())
+            return m_favoriteManager->isFavorite(m_currentTrack.filePath);
+
+        return false;
+    }
+
+    if(m_library && m_index >= 0 && m_index < m_library->count())
+        return m_library->trackAt(m_index).favorite;
+
+    return m_currentTrack.favorite;
 }
 
 void PlayerController::toggleFavorite()
 {
+    if(m_favoriteManager)
+    {
+        if(m_library && m_index >= 0 && m_index < m_library->count())
+        {
+            m_favoriteManager->toggleFavoriteTrack(m_library->trackAt(m_index));
+        }
+        else if(!m_currentTrack.filePath.isEmpty())
+        {
+            m_favoriteManager->toggleFavoriteTrack(m_currentTrack);
+            m_currentTrack.favorite = m_favoriteManager->isFavorite(m_currentTrack.filePath);
+            emit favoriteChanged();
+        }
+        return;
+    }
+
     if(!m_library)
         return;
 
     if(m_index < 0 || m_index >= m_library->count())
         return;
-    if(m_favoriteManager)
-    {
-        m_favoriteManager->toggleFavoriteTrack(m_library->trackAt(m_index));
-    }else
-    {
-        m_library->toggleFavorite(m_index);
-        emit favoriteChanged();
-    }
+
+    m_library->toggleFavorite(m_index);
+    emit favoriteChanged();
 }
 
 QVariantList  PlayerController::lyricList() const
@@ -418,15 +435,22 @@ void PlayerController::seek(qint64 milliseconds)
 
 void PlayerController::seekToLyric(int index)
 {
-    if(!m_library || m_index < 0 || m_index >= m_library->count())
-        return;
-    const MusicTrack track = m_library->trackAt(m_index);
-    if(index >= 0 && index < track.lyrics.size())
+    QVector<LyricLine> lyrics;
+    if(m_library && m_index >= 0 && m_index < m_library->count())
     {
-        qint64 targetTime = track.lyrics[index].timeMs;
+        lyrics = m_library->trackAt(m_index).lyrics;
+    }
+    else
+    {
+        lyrics = m_currentTrack.lyrics;
+    }
+
+    if(index >= 0 && index < lyrics.size())
+    {
+        qint64 targetTime = lyrics[index].timeMs;
         m_player->setPosition(targetTime);
         m_currentLyricIndex = index;
-        m_currentLyric = track.lyrics[index].text;
+        m_currentLyric = lyrics[index].text;
         emit currentLyricIndexChanged();
         emit currentLyricChanged();
         if(m_player->playbackState() != QMediaPlayer::PlayingState)
@@ -649,9 +673,29 @@ void PlayerController::setLibrary(MusicLibraryModel * library)
 
         //监听新模型的重置
         connect(m_library,&MusicLibraryModel::modelReset,this,[this](){
+            if(!m_currentTrack.filePath.isEmpty() && m_library)
+            {
+                int foundIndex = m_library->indexOfFilePath(m_currentTrack.filePath);
+                if(foundIndex != -1)
+                {
+                    m_index = foundIndex;
+                    emit currentIndexChanged();
+                    return;
+                }
+            }
+
+            if(m_player->playbackState() == QMediaPlayer::PlayingState ||
+               m_player->playbackState() == QMediaPlayer::PausedState)
+            {
+                m_index = -1;
+                emit currentIndexChanged();
+                return;
+            }
+
             m_player->stop();
             m_player->setSource(QUrl());
             m_index = -1;
+            m_currentTrack = MusicTrack();
             m_currentLyric.clear();
             m_currentLyricIndex = -1;
             m_lyricList.clear();
@@ -701,12 +745,10 @@ void PlayerController::setFavoriteManager(FavoriteManager * manager)
     if(m_favoriteManager)
     {
         connect(m_favoriteManager,&FavoriteManager::favoriteChanged,this,[this](const QString & filePath, bool){
-            if(m_library && m_index >= 0 && m_index < m_library->count())
+            if((m_library && m_index >= 0 && m_index < m_library->count() && m_library->trackAt(m_index).filePath == filePath) ||
+               (!m_currentTrack.filePath.isEmpty() && m_currentTrack.filePath == filePath))
             {
-                if(m_library->trackAt(m_index).filePath == filePath)
-                {
-                    emit favoriteChanged();
-                }
+                emit favoriteChanged();
             }
         });
     }

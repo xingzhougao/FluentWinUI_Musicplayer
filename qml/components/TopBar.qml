@@ -15,6 +15,12 @@ Rectangle{
     //歌词模式标记与返回信号
     property bool isLyricMode: false
     signal backRequested()
+    signal searchRequested(string keyword)
+    signal searchItemClicked(int index, string title)
+
+    function setSearchText(t) {
+        searchField.text = t;
+    }
 
     //歌词模式下与歌词页背景无缝融合
     color: root.isLyricMode ? "#0c131e" : "#0e141d"
@@ -130,23 +136,26 @@ Rectangle{
         }
 
         Rectangle{
+            id: searchBox
             visible: !root.isLyricMode
             Layout.preferredWidth: 460
             Layout.preferredHeight: 42
             radius: 19
-            color: searchField.activeFocus ? "#182332" : "#141c27"      //蓝黑 深黑
-            border.color: searchField.activeFocus ? "#486b9a" : "#243143" //蓝 蓝黑
+            color: searchField.activeFocus ? "#182332" : "#141c27"
+            border.color: searchField.activeFocus ? "#486b9a" : "#243143"
+            Behavior on border.color { ColorAnimation { duration: 150 } }
 
             RowLayout{
                 anchors.fill: parent
                 anchors.leftMargin: 14
-                anchors.rightMargin: 12
+                anchors.rightMargin: 8
                 spacing: 8
 
-                Text{
-                    text: "°"
-                    color: "#91a0b4"
-                    font.pixelSize: 20
+                Image {
+                    source: "../icons/search.svg"
+                    sourceSize.width: 16
+                    sourceSize.height: 16
+                    opacity: 0.65
                 }
 
                 TextField{
@@ -157,20 +166,238 @@ Rectangle{
                     color: "#e7edf5"
                     font.pixelSize: 13
                     background: null
-                    selectByMouse: true         //是否允许用户用鼠标来拖动选中文本
+                    selectByMouse: true
+
+                    onTextChanged: {
+                        var kw = searchField.text.trim();
+                        if (kw.length > 0 && typeof suggestLibrary !== "undefined" && typeof musicLibrary !== "undefined") {
+                            suggestLibrary.searchFromModel(musicLibrary, kw);
+                            if (suggestLibrary.count > 0 && searchField.activeFocus) {
+                                suggestPopup.open();
+                            } else {
+                                suggestPopup.close();
+                            }
+                        } else {
+                            if (typeof suggestLibrary !== "undefined") {
+                                suggestLibrary.clear();
+                            }
+                            suggestPopup.close();
+                        }
+                    }
+
+                    onAccepted: {
+                        var kw = searchField.text.trim();
+                        if (kw.length > 0) {
+                            suggestPopup.close();
+                            searchField.focus = false;
+                            root.searchRequested(kw);
+                        }
+                    }
                 }
 
-                Rectangle{
-                    width: 30
-                    height: 24
-                    radius: 8
-                    color: "#202c3b"
+                // 清空按钮
+                Button {
+                    id: clearBtn
+                    visible: searchField.text.length > 0
+                    Layout.preferredWidth: 24
+                    Layout.preferredHeight: 24
+                    background: Rectangle {
+                        radius: 12
+                        color: clearBtn.hovered ? "#283b52" : "transparent"
+                    }
+                    contentItem: Text {
+                        text: "✕"
+                        color: clearBtn.hovered ? "#f5f7fb" : "#7f8ea2"
+                        font.pixelSize: 11
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onClicked: {
+                        searchField.text = "";
+                        if (typeof suggestLibrary !== "undefined") {
+                            suggestLibrary.clear();
+                        }
+                        suggestPopup.close();
+                    }
+                }
 
-                    Text{
+                // 右侧搜索图标按钮
+                Button {
+                    id: searchActionBtn
+                    Layout.preferredWidth: 32
+                    Layout.preferredHeight: 28
+                    hoverEnabled: true
+
+                    background: Rectangle {
+                        radius: 8
+                        color: searchActionBtn.pressed ? "#2e435e" : (searchActionBtn.hovered ? "#243449" : "#1c2736")
+                        border.color: searchActionBtn.hovered ? "#4a6c96" : "#2a3c53"
+                        border.width: 1
+                        scale: searchActionBtn.pressed ? 0.94 : 1.0
+                        Behavior on scale { NumberAnimation { duration: 80 } }
+                        Behavior on color { ColorAnimation { duration: 120 } }
+                    }
+
+                    contentItem: Image {
                         anchors.centerIn: parent
-                        text: "⌘K"
-                        color: "#7f8ea2"
-                        font.pixelSize: 10
+                        source: "../icons/search.svg"
+                        sourceSize.width: 15
+                        sourceSize.height: 15
+                        opacity: searchActionBtn.hovered ? 1.0 : 0.8
+                    }
+
+                    ToolTip.visible: hovered
+                    ToolTip.text: "搜索 (Enter)"
+                    ToolTip.delay: 350
+
+                    onClicked: {
+                        var kw = searchField.text.trim();
+                        if (kw.length > 0) {
+                            suggestPopup.close();
+                            searchField.focus = false;
+                            root.searchRequested(kw);
+                        }
+                    }
+                }
+            }
+
+            // 下拉联想框
+            Popup {
+                id: suggestPopup
+                y: searchBox.height + 6
+                width: searchBox.width
+                padding: 6
+                closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+
+                background: Rectangle {
+                    radius: 12
+                    color: "#111823"
+                    border.color: "#2a394c"
+                    border.width: 1
+
+                    // 微阴影感发光边缘
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: -1
+                        radius: 13
+                        color: "transparent"
+                        border.color: "#3d577a"
+                        border.width: 1
+                        opacity: 0.25
+                        z: -1
+                    }
+                }
+
+                contentItem: ColumnLayout {
+                    spacing: 4
+                    width: parent.width
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 8
+                        Layout.rightMargin: 8
+                        Layout.topMargin: 4
+                        spacing: 6
+
+                        Text {
+                            text: "匹配到的本地音乐"
+                            color: "#8c99aa"
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        Text {
+                            text: (typeof suggestLibrary !== "undefined" ? suggestLibrary.count : 0) + " 个结果"
+                            color: "#5b6f88"
+                            font.pixelSize: 10
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 1
+                        color: "#1c2736"
+                    }
+
+                    ListView {
+                        id: suggestListView
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.min(contentHeight, 260)
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+                        model: typeof suggestLibrary !== "undefined" ? suggestLibrary : null
+
+                        delegate: Rectangle {
+                            id: itemRect
+                            width: suggestListView.width
+                            height: 44
+                            radius: 6
+                            color: itemMouse.containsMouse ? "#1c2a3d" : "transparent"
+                            Behavior on color { ColorAnimation { duration: 100 } }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                spacing: 10
+
+                                Rectangle {
+                                    width: 28
+                                    height: 28
+                                    radius: 5
+                                    color: "#1a2535"
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "♪"
+                                        color: "#6ea8ff"
+                                        font.pixelSize: 12
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 1
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: model.title || "未知歌曲"
+                                        color: "#f5f7fb"
+                                        font.pixelSize: 12
+                                        font.weight: Font.DemiBold
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: (model.artist || "未知歌手") + (model.album ? (" · " + model.album) : "")
+                                        color: "#7e8d9f"
+                                        font.pixelSize: 10
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                Text {
+                                    text: "进入"
+                                    color: itemMouse.containsMouse ? "#6ea8ff" : "transparent"
+                                    font.pixelSize: 11
+                                    font.weight: Font.Medium
+                                }
+                            }
+
+                            MouseArea {
+                                id: itemMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    suggestPopup.close();
+                                    searchField.focus = false;
+                                    root.searchItemClicked(index, model.title);
+                                }
+                            }
+                        }
                     }
                 }
             }

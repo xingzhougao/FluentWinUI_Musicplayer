@@ -38,6 +38,7 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
     QML_FILES qml/components/DesktopLyricWindow.qml
     QML_FILES qml/pages/LyricPage.qml
     QML_FILES qml/pages/FavoritePage.qml
+    QML_FILES qml/pages/SearchResultPage.qml
     SOURCES
         src/PlayerController.h
         src/PlayerController.cpp
@@ -78,6 +79,7 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
         qml/icons/addvolume.svg
         qml/icons/recvolume.svg
         qml/icons/playlist_delete.svg
+        qml/icons/search.svg
         qml/image_resource/alone_night.png
         qml/image_resource/city_wandering.png
         qml/image_resource/focused_coding.png

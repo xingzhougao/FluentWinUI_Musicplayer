@@ -34,6 +34,12 @@ int main(int argc,char * argv[])
     favoriteManager.registerModel(&library);
     favoriteManager.registerModel(&recommendLibrary);
     favoriteManager.registerModel(recentManager.model());
+
+    MusicLibraryModel searchLibrary;
+    MusicLibraryModel suggestLibrary;
+    favoriteManager.registerModel(&searchLibrary);
+    favoriteManager.registerModel(&suggestLibrary);
+
     player.setFavoriteManager(&favoriteManager);
     playlistManager.setFavoriteManager(&favoriteManager);
 
@@ -46,6 +52,8 @@ int main(int argc,char * argv[])
     engine.rootContext()->setContextProperty("recentLibrary",recentManager.model());
     engine.rootContext()->setContextProperty("favoriteManager",&favoriteManager);
     engine.rootContext()->setContextProperty("favoriteLibrary",favoriteManager.model());
+    engine.rootContext()->setContextProperty("searchLibrary",&searchLibrary);
+    engine.rootContext()->setContextProperty("suggestLibrary",&suggestLibrary);
 
     QObject::connect(&engine,&QQmlApplicationEngine::objectCreationFailed,&app,
                      [](){QCoreApplication::exit(-1);},Qt::QueuedConnection);

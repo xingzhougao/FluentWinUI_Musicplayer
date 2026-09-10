@@ -60,6 +60,7 @@ public:
     Q_INVOKABLE int indexOfFilePath(const QString & filePath) const;
     QStringList allFilePaths() const;
     Q_INVOKABLE void clear();
+    Q_INVOKABLE void searchFromModel(MusicLibraryModel * sourceModel, const QString & keyword);
 
 signals:
     void countChanged();

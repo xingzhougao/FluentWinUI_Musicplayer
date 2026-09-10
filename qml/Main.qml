@@ -17,10 +17,36 @@ ApplicationWindow {
 
     property int selectedNav: 0
     property bool lyricViewOpen: false
+    property string currentSearchKeyword: ""
+
+    function openSearchResult(keyword) {
+        var kw = (keyword || "").trim();
+        if (kw.length === 0) return;
+        currentSearchKeyword = kw;
+        topBar.setSearchText(kw);
+        if (typeof searchLibrary !== "undefined" && typeof musicLibrary !== "undefined") {
+            searchLibrary.searchFromModel(musicLibrary, kw);
+        }
+        window.lyricViewOpen = false;
+        window.selectedNav = 7;
+        if (sideBar) sideBar.selectedIndex = -1;
+    }
+
+    function openSearchResultAndPlay(keyword, targetIndex) {
+        openSearchResult(keyword);
+        if (player && typeof searchLibrary !== "undefined" && searchLibrary.count > 0) {
+            var idx = (targetIndex >= 0 && targetIndex < searchLibrary.count) ? targetIndex : 0;
+            player.playFromModel(searchLibrary, idx);
+        }
+    }
 
     onSelectedNavChanged: {
         if (typeof sideBar !== "undefined" && sideBar) {
-            sideBar.selectedIndex = window.selectedNav;
+            if (window.selectedNav === 7) {
+                sideBar.selectedIndex = -1;
+            } else {
+                sideBar.selectedIndex = window.selectedNav;
+            }
         }
     }
 
@@ -56,6 +82,7 @@ ApplicationWindow {
         spacing: 0
 
         TopBar {
+            id: topBar
             Layout.fillWidth: true
             Layout.preferredHeight: implicitHeight
             borderColor: window.borderColor
@@ -65,6 +92,14 @@ ApplicationWindow {
 
             onBackRequested: {
                 window.lyricViewOpen = false
+            }
+
+            onSearchRequested: function(keyword) {
+                window.openSearchResult(keyword);
+            }
+
+            onSearchItemClicked: function(index, title) {
+                window.openSearchResultAndPlay(title, index);
             }
         }
 
@@ -150,6 +185,22 @@ ApplicationWindow {
                         playerController: player
                         favoriteModel: typeof favoriteLibrary !== "undefined" ? favoriteLibrary : null
                         favoriteMgr: typeof favoriteManager !== "undefined" ? favoriteManager : null
+                        textPrimaryColor: window.textPrimaryColor
+                        textSecondaryColor: window.textSecondaryColor
+                        accentColor: window.accentColor
+                        borderColor: window.borderColor
+                    }
+
+                    // 索引 6 占位
+                    Item {}
+
+                    // 索引 7: 搜索结果页
+                    SearchResultPage {
+                        id: searchResultPage
+                        playerController: player
+                        searchModel: typeof searchLibrary !== "undefined" ? searchLibrary : null
+                        favoriteMgr: typeof favoriteManager !== "undefined" ? favoriteManager : null
+                        keyword: window.currentSearchKeyword
                         textPrimaryColor: window.textPrimaryColor
                         textSecondaryColor: window.textSecondaryColor
                         accentColor: window.accentColor
