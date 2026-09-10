@@ -6,6 +6,7 @@
 #include "MusicLibraryModel.h"
 #include "PlaylistManager.h"
 #include "RecentManager.h"
+#include "FavoriteManager.h"
 #include <QDir>
 
 int main(int argc,char * argv[])
@@ -28,6 +29,13 @@ int main(int argc,char * argv[])
     //创建最近播放管理器
     RecentManager recentManager;
     player.setRecentManager(&recentManager);
+    //创建我的喜欢音乐管理器
+    FavoriteManager favoriteManager;
+    favoriteManager.registerModel(&library);
+    favoriteManager.registerModel(&recommendLibrary);
+    favoriteManager.registerModel(recentManager.model());
+    player.setFavoriteManager(&favoriteManager);
+    playlistManager.setFavoriteManager(&favoriteManager);
 
     QQmlApplicationEngine engine;       //创建QML引擎
     engine.rootContext()->setContextProperty("player",&player);
@@ -36,6 +44,8 @@ int main(int argc,char * argv[])
     engine.rootContext()->setContextProperty("playlistManager",&playlistManager);
     engine.rootContext()->setContextProperty("recentManager",&recentManager);
     engine.rootContext()->setContextProperty("recentLibrary",recentManager.model());
+    engine.rootContext()->setContextProperty("favoriteManager",&favoriteManager);
+    engine.rootContext()->setContextProperty("favoriteLibrary",favoriteManager.model());
 
     QObject::connect(&engine,&QQmlApplicationEngine::objectCreationFailed,&app,
                      [](){QCoreApplication::exit(-1);},Qt::QueuedConnection);

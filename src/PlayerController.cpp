@@ -1,5 +1,6 @@
 #include "PlayerController.h"
 #include "RecentManager.h"
+#include "FavoriteManager.h"
 
 #include <QMediaMetaData>
 #include <QRandomGenerator>
@@ -365,6 +366,10 @@ bool PlayerController::favorite() const
 
     if(m_index < 0 || m_index >= m_library->count())
         return false;
+
+    if(m_favoriteManager)
+        return m_favoriteManager->isFavorite(m_library->trackAt(m_index).filePath);
+
     return m_library->trackAt(m_index).favorite;
 }
 
@@ -375,9 +380,14 @@ void PlayerController::toggleFavorite()
 
     if(m_index < 0 || m_index >= m_library->count())
         return;
-
-    m_library->toggleFavorite(m_index);
-    emit favoriteChanged();
+    if(m_favoriteManager)
+    {
+        m_favoriteManager->toggleFavoriteTrack(m_library->trackAt(m_index));
+    }else
+    {
+        m_library->toggleFavorite(m_index);
+        emit favoriteChanged();
+    }
 }
 
 QVariantList  PlayerController::lyricList() const
@@ -683,6 +693,23 @@ void PlayerController::setLibrary(MusicLibraryModel * library)
 void PlayerController::setRecentManager(RecentManager * manager)
 {
     m_recentManager = manager;
+}
+
+void PlayerController::setFavoriteManager(FavoriteManager * manager)
+{
+    m_favoriteManager = manager;
+    if(m_favoriteManager)
+    {
+        connect(m_favoriteManager,&FavoriteManager::favoriteChanged,this,[this](const QString & filePath, bool){
+            if(m_library && m_index >= 0 && m_index < m_library->count())
+            {
+                if(m_library->trackAt(m_index).filePath == filePath)
+                {
+                    emit favoriteChanged();
+                }
+            }
+        });
+    }
 }
 
 void PlayerController::playFromModel(MusicLibraryModel * library,int index)

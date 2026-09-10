@@ -11,6 +11,7 @@
 #include "MusicLibraryModel.h"
 
 class RecentManager;
+class FavoriteManager;
 
 class PlayerController : public QObject
 {
@@ -50,6 +51,7 @@ public:
     MusicLibraryModel * currentLibrary() const;
     Q_INVOKABLE void setLibrary(MusicLibraryModel * library);
     void setRecentManager(RecentManager * manager);
+    void setFavoriteManager(FavoriteManager * manager);
     Q_INVOKABLE void togglePlay();
     Q_INVOKABLE void stop();
     Q_INVOKABLE void next();
@@ -104,4 +106,5 @@ private:
     int m_currentLyricIndex = -1;
     QVariantList m_lyricList;
     RecentManager * m_recentManager = nullptr;
+    FavoriteManager * m_favoriteManager = nullptr;
 };

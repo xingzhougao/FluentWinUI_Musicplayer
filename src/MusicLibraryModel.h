@@ -5,6 +5,8 @@
 
 #include "MusicTrack.h"
 
+class FavoriteManager;
+
 class MusicLibraryModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -43,6 +45,11 @@ public:
     void markPlayed(int index);
     void setLyrics(int index,const QVector<LyricLine> &lyrics);
 
+    void setFavoriteManager(FavoriteManager * manager);
+    FavoriteManager * favoriteManager() const;
+    void setTrackFavorite(int index,bool favorite);
+    void setFavoriteByFilePath(const QString & filePath, bool isFavorite);
+
     // 歌单动态增删歌曲
     void appendTrack(const MusicTrack & track);
     void insertTrack(int index, const MusicTrack & track);
@@ -59,4 +66,5 @@ signals:
 
 private:
     QVector<MusicTrack> m_tracks;
+    FavoriteManager * m_favoriteManager = nullptr;
 };

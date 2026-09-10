@@ -35,6 +35,9 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
     QML_FILES qml/pages/PlaylistPage.qml
     QML_FILES qml/pages/RecentPage.qml
     QML_FILES qml/pages/RecommendPage.qml
+    QML_FILES qml/components/DesktopLyricWindow.qml
+    QML_FILES qml/pages/LyricPage.qml
+    QML_FILES qml/pages/FavoritePage.qml
     SOURCES
         src/PlayerController.h
         src/PlayerController.cpp
@@ -44,6 +47,10 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
         src/PlaylistManager.cpp
         src/RecentManager.h
         src/RecentManager.cpp
+        src/MusicTrack.h
+        src/Lyric.h
+        src/FavoriteManager.h
+        src/FavoriteManager.cpp
 
     RESOURCES
         qml/icons/download_manager.svg
@@ -80,13 +87,6 @@ qt_add_qml_module(appFluentWinUI_Musicplayer
         qml/image_resource/rainy_room.png
         qml/image_resource/weekend_coffee.png
         qml/image_resource/banner.png
-        SOURCES src/MusicTrack.h
-        SOURCES
-        SOURCES src/MusicLibraryModel.h src/MusicLibraryModel.cpp
-        SOURCES src/Lyric.h
-        QML_FILES qml/components/DesktopLyricWindow.qml
-        QML_FILES qml/pages/LyricPage.qml
-
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

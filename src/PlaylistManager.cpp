@@ -1,4 +1,5 @@
 #include "PlaylistManager.h"
+#include "FavoriteManager.h"
 
 #include <QCoreApplication>
 #include <QFile>
@@ -54,6 +55,10 @@ QString PlaylistManager::createPlaylist(const QString & name, const QString & co
     entry.name = trimmedName;
     entry.coverUrl = coverUrl.trimmed();
     entry.model = new MusicLibraryModel(this);
+    if(m_favoriteManager)
+    {
+        m_favoriteManager->registerModel(entry.model);
+    }
 
     m_playlists.append(entry);
     savePlaylists();
@@ -278,7 +283,10 @@ void PlaylistManager::loadPlaylists()
         entry.name = obj[QStringLiteral("name")].toString();
         entry.coverUrl = obj[QStringLiteral("coverUrl")].toString();
         entry.model = new MusicLibraryModel(this);
-
+        if(m_favoriteManager)
+        {
+            m_favoriteManager->registerModel(entry.model);
+        }
         QJsonArray songs = obj[QStringLiteral("songs")].toArray();
         for (const QJsonValue & sVal : songs)
         {
@@ -294,6 +302,21 @@ void PlaylistManager::loadPlaylists()
         }
 
         m_playlists.append(entry);
+    }
+}
+
+void PlaylistManager::setFavoriteManager(FavoriteManager * manager)
+{
+    m_favoriteManager = manager;
+    if(m_favoriteManager)
+    {
+        for(auto & entry : m_playlists)
+        {
+            if(entry.model)
+            {
+                m_favoriteManager->registerModel(entry.model);
+            }
+        }
     }
 }
 

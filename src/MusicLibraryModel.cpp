@@ -1,4 +1,5 @@
 #include "MusicLibraryModel.h"
+#include "FavoriteManager.h"
 #include <QDirIterator>
 #include <QFileInfo>
 #include <QFile>
@@ -146,6 +147,10 @@ void MusicLibraryModel::scanDirectory(const QString & directory)
         {
             track.duration = (info.size() / 16000) * 1000;  //兜底估算
         }
+        if(m_favoriteManager)
+        {
+            track.favorite = m_favoriteManager->isFavorite(track.filePath);
+        }
         m_tracks.append(track);
     }
     std::sort(m_tracks.begin(),m_tracks.end(),[](const MusicTrack & a,const MusicTrack & b){
@@ -187,11 +192,54 @@ void MusicLibraryModel::markPlayed(int index)
     emit dataChanged(modelIndex,modelIndex,{LastPlayedRole});
 }
 
+void MusicLibraryModel::setFavoriteManager(FavoriteManager * manager)
+{
+    m_favoriteManager = manager;
+}
+
+FavoriteManager * MusicLibraryModel::favoriteManager() const
+{
+    return m_favoriteManager;
+}
+
+void MusicLibraryModel::setTrackFavorite(int index,bool favorite)
+{
+    if(index < 0 || index >= m_tracks.size())
+        return;
+    if(m_tracks[index].favorite != favorite)
+    {
+        m_tracks[index].favorite = favorite;
+        QModelIndex modelIndex = this->index(index);
+        emit dataChanged(modelIndex,modelIndex,{FavoriteRole});
+    }
+}
+
+void MusicLibraryModel::setFavoriteByFilePath(const QString & filePath,bool isFavorite)
+{
+    for(int i = 0; i< m_tracks.size();++i)
+    {
+        if(m_tracks[i].filePath == filePath)
+        {
+            if(m_tracks[i].favorite != isFavorite)
+            {
+                m_tracks[i].favorite = isFavorite;
+                QModelIndex modelIndex = this->index(i);
+                emit dataChanged(modelIndex,modelIndex,{FavoriteRole});
+            }
+        }
+    }
+}
+
 //喜欢歌曲
 void MusicLibraryModel::toggleFavorite(int index)
 {
     if(index < 0 || index >= m_tracks.size())
         return;
+    if(m_favoriteManager)
+    {
+        m_favoriteManager->toggleFavoriteTrack(m_tracks[index]);
+        return;
+    }
     m_tracks[index].favorite = !m_tracks[index].favorite;
     QModelIndex modelIndex = this->index(index);
     emit dataChanged(modelIndex,modelIndex,{FavoriteRole});
@@ -302,6 +350,10 @@ void MusicLibraryModel::scanRandomDirectory(const QString & directory,int count)
         if(track.duration <= 0 && info.size() > 0)
         {
             track.duration = (info.size() / 16000) * 1000;
+        }
+        if(m_favoriteManager)
+        {
+            track.favorite = m_favoriteManager->isFavorite(track.filePath);
         }
         m_tracks.append(track);
     }

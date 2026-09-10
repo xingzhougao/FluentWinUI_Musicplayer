@@ -146,6 +146,15 @@ ApplicationWindow {
                         accentColor: window.accentColor
                         borderColor: window.borderColor
                     }
+                    FavoritePage {
+                        playerController: player
+                        favoriteModel: typeof favoriteLibrary !== "undefined" ? favoriteLibrary : null
+                        favoriteMgr: typeof favoriteManager !== "undefined" ? favoriteManager : null
+                        textPrimaryColor: window.textPrimaryColor
+                        textSecondaryColor: window.textSecondaryColor
+                        accentColor: window.accentColor
+                        borderColor: window.borderColor
+                    }
                 }
             }
             //全屏交互式歌词界面

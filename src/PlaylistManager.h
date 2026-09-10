@@ -6,6 +6,8 @@
 #include <QVariantMap>
 #include "MusicLibraryModel.h"
 
+class FavoriteManager;
+
 struct PlaylistEntry {
     QString id;
     QString name;
@@ -58,6 +60,7 @@ public:
     // 持久化保存与加载
     void loadPlaylists();
     void savePlaylists();
+    void setFavoriteManager(FavoriteManager * manager);
 
 signals:
     void playlistsChanged();
@@ -68,4 +71,5 @@ private:
 
 private:
     QList<PlaylistEntry> m_playlists;
+    FavoriteManager * m_favoriteManager = nullptr;
 };
