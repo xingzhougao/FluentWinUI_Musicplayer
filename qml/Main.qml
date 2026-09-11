@@ -84,15 +84,11 @@ ApplicationWindow {
         TopBar {
             id: topBar
             Layout.fillWidth: true
-            Layout.preferredHeight: implicitHeight
+            Layout.preferredHeight: visible ? implicitHeight : 0
+            visible: !window.lyricViewOpen
             borderColor: window.borderColor
             textPrimaryColor: window.textPrimaryColor
             textSecondaryColor: window.textSecondaryColor
-            isLyricMode: window.lyricViewOpen
-
-            onBackRequested: {
-                window.lyricViewOpen = false
-            }
 
             onSearchRequested: function(keyword) {
                 window.openSearchResult(keyword);
