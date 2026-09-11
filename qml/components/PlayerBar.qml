@@ -96,9 +96,11 @@ Rectangle {
             //歌曲封面
             Rectangle {
                 id: albumCover
-                Layout.preferredWidth: 58
-                Layout.preferredHeight: 58
-                radius: 15
+                Layout.preferredWidth: 54
+                Layout.preferredHeight: 54
+                radius: 10
+                clip: true
+                color: "#1a273b"
 
                 gradient: Gradient {
                     GradientStop { position: 0.0; color: coverMouseArea.containsMouse ? "#7e6fff" : "#6d60d8" }
@@ -108,11 +110,47 @@ Rectangle {
                 scale: coverMouseArea.pressed ? 0.95 : (coverMouseArea.containsMouse ? 1.05 : 1.0)
                 Behavior on scale { NumberAnimation { duration: 100 } }
 
-                Text {
+                // 真实封面
+                Image {
+                    id: barCoverImg
+                    anchors.fill: parent
+                    source: (root.playerController && root.playerController.coverUrl) ? root.playerController.coverUrl : ""
+                    visible: source !== "" && status === Image.Ready
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                }
+
+                // 无封面时的占位
+                Column {
                     anchors.centerIn: parent
-                    text: "♪"
-                    color: "white"
-                    font.pixelSize: 24
+                    spacing: 2
+                    visible: !barCoverImg.visible && !coverMouseArea.containsMouse
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "♪"
+                        color: "white"
+                        font.pixelSize: 18
+                    }
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "暂无封面"
+                        color: "#d0d9e8"
+                        font.pixelSize: 8
+                    }
+                }
+
+                // 悬浮时的歌词界面展开提示蒙层
+                Rectangle {
+                    anchors.fill: parent
+                    color: "#80000000"
+                    visible: coverMouseArea.containsMouse
+                    Text {
+                        anchors.centerIn: parent
+                        text: "⤢"
+                        color: "white"
+                        font.pixelSize: 18
+                        font.bold: true
+                    }
                 }
 
                 MouseArea {
@@ -126,8 +164,8 @@ Rectangle {
                 }
 
                 ToolTip.visible: coverMouseArea.containsMouse
-                ToolTip.text: "歌词界面"
-                ToolTip.delay: 400
+                ToolTip.text: "进入歌词界面"
+                ToolTip.delay: 300
             }
 
             //歌名+歌手

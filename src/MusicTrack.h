@@ -12,6 +12,7 @@ struct MusicTrack{
     QString album;
     qint64 duration = 0;
     bool favorite = false;
+    QString coverUrl;
     //最近播放时间
     QDateTime lastPlayed;
     //当前歌曲的歌词

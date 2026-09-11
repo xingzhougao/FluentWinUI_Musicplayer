@@ -18,6 +18,8 @@ class PlayerController : public QObject
     Q_OBJECT
     Q_PROPERTY(QString title READ title NOTIFY trackChanged)
     Q_PROPERTY(QString artist READ artist NOTIFY trackChanged)
+    Q_PROPERTY(QString album READ album NOTIFY trackChanged)
+    Q_PROPERTY(QString coverUrl READ coverUrl NOTIFY trackChanged)
     Q_PROPERTY(bool playing READ playing NOTIFY playingChanged)
     Q_PROPERTY(double progress READ progress WRITE setProgress NOTIFY progressChanged)
     Q_PROPERTY(double volume READ volume WRITE setVolume NOTIFY volumeChanged)
@@ -35,10 +37,12 @@ class PlayerController : public QObject
 public:
     explicit PlayerController(MusicLibraryModel * library,QObject * parent = nullptr);
     QString title() const;
+    QString artist() const;
+    QString album() const;
+    QString coverUrl() const;
     QString currentLyric() const;
     QVariantList lyricList() const;
     int currentLyricIndex() const;
-    QString artist() const;
     bool playing() const;
     double progress() const;
     double volume() const;
@@ -108,4 +112,5 @@ private:
     QVariantList m_lyricList;
     RecentManager * m_recentManager = nullptr;
     FavoriteManager * m_favoriteManager = nullptr;
+    bool m_isChangingTrack = false;
 };

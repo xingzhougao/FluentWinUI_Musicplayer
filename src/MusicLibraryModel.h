@@ -20,7 +20,8 @@ public:
         AlbumRole,
         DurationRole,
         FavoriteRole,
-        LastPlayedRole
+        LastPlayedRole,
+        CoverUrlRole
     };
 
     Q_ENUM(Roles)

@@ -1,4 +1,4 @@
-﻿import QtQuick
+import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
@@ -145,7 +145,7 @@ Item {
 
                 Text {
                     Layout.preferredWidth: 46
-                    text: "序号"
+                    text: "封面"
                     color: "#6b7c91"
                     font.pixelSize: 12
                     font.weight: Font.Medium
@@ -274,39 +274,66 @@ Item {
                     anchors.rightMargin: 16
                     spacing: 12
 
-                    // 封面缩略图与序号
+                    // 封面缩略图
                     Item {
                         Layout.preferredWidth: 46
-                        Layout.preferredHeight: 40
+                        Layout.preferredHeight: 44
 
                         Rectangle {
                             id: coverBox
-                            width: 38
-                            height: 38
-                            radius: 7
+                            width: 42
+                            height: 42
+                            radius: 6
                             anchors.centerIn: parent
                             clip: true
+                            color: "#162335"
 
                             gradient: Gradient {
                                 GradientStop { position: 0.0; color: isCurrent ? "#2a4b7c" : (rowMouse.containsMouse ? "#1f385c" : "#17263b") }
                                 GradientStop { position: 1.0; color: isCurrent ? "#55387a" : (rowMouse.containsMouse ? "#392454" : "#271a39") }
                             }
 
-                            Text {
-                                anchors.centerIn: parent
-                                visible: !rowMouse.containsMouse && !isPlaying
-                                text: (index + 1 < 10 ? "0" : "") + (index + 1)
-                                color: isCurrent ? root.accentColor : "#5b6d82"
-                                font.pixelSize: 11
-                                font.weight: Font.Medium
+                            // 真实封面
+                            Image {
+                                id: rowCoverImg
+                                anchors.fill: parent
+                                source: (typeof model.coverUrl !== "undefined" && model.coverUrl) ? model.coverUrl : ""
+                                visible: source !== "" && status === Image.Ready
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
                             }
 
-                            Text {
+                            // 无封面时：显示“暂无封面”
+                            Column {
                                 anchors.centerIn: parent
+                                spacing: 1
+                                visible: !rowCoverImg.visible && !rowMouse.containsMouse && !isPlaying
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "♪"
+                                    color: isCurrent ? root.accentColor : "#5b6d82"
+                                    font.pixelSize: 11
+                                }
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "暂无封面"
+                                    color: isCurrent ? root.accentColor : "#5b6d82"
+                                    font.pixelSize: 7
+                                }
+                            }
+
+                            // 悬浮或正在播放时的播放控制图标
+                            Rectangle {
+                                anchors.fill: parent
+                                color: rowCoverImg.visible ? "#80000000" : "transparent"
                                 visible: rowMouse.containsMouse || isPlaying
-                                text: isPlaying ? "❚❚" : "▶"
-                                color: "white"
-                                font.pixelSize: isPlaying ? 10 : 12
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: isPlaying ? "❚❚" : "▶"
+                                    color: "white"
+                                    font.pixelSize: isPlaying ? 10 : 12
+                                }
                             }
                         }
                     }

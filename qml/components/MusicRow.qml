@@ -10,6 +10,7 @@ Rectangle {
     property string artist: "未知歌手"
     property string album: ""
     property string durationText: "03:45"
+    property string coverUrl: ""
     property bool favorite: false
     property bool isCurrent: false
     property bool isPlaying: false
@@ -46,22 +47,59 @@ Rectangle {
 
         // 封面盒子
         Rectangle {
-            Layout.preferredWidth: 38
-            Layout.preferredHeight: 38
-            radius: 11
+            id: coverBox
+            Layout.preferredWidth: 42
+            Layout.preferredHeight: 42
+            radius: 6
             clip: true
+            color: "#162335"
 
             gradient: Gradient {
                 GradientStop { position: 0.0; color: root.isCurrent ? "#325c94" : (rowArea.containsMouse ? "#2f486d" : "#253b59") }
                 GradientStop { position: 1.0; color: root.isCurrent ? "#684398" : (rowArea.containsMouse ? "#5f3d79" : "#4e3363") }
             }
 
-            Text {
+            // 真实封面
+            Image {
+                id: rowCoverImg
+                anchors.fill: parent
+                source: root.coverUrl || ""
+                visible: root.coverUrl !== "" && status === Image.Ready
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+            }
+
+            // 无封面时：显示“暂无封面”
+            Column {
                 anchors.centerIn: parent
-                text: root.isPlaying ? "❚❚" : (rowArea.containsMouse ? "▶" : "♪")
-                color: "white"
-                font.pixelSize: root.isPlaying ? 11 : (rowArea.containsMouse ? 12 : 13)
-                font.bold: true
+                spacing: 1
+                visible: !rowCoverImg.visible && !rowArea.containsMouse && !root.isPlaying
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "♪"
+                    color: root.isCurrent ? root.accentColor : "#5b6d82"
+                    font.pixelSize: 11
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "暂无封面"
+                    color: root.isCurrent ? root.accentColor : "#5b6d82"
+                    font.pixelSize: 7
+                }
+            }
+
+            // 悬浮或正在播放时的播放控制图标
+            Rectangle {
+                anchors.fill: parent
+                color: rowCoverImg.visible ? "#80000000" : "transparent"
+                visible: rowArea.containsMouse || root.isPlaying
+
+                Text {
+                    anchors.centerIn: parent
+                    text: root.isPlaying ? "❚❚" : "▶"
+                    color: "white"
+                    font.pixelSize: root.isPlaying ? 10 : 12
+                }
             }
         }
 

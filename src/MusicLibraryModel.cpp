@@ -1,5 +1,6 @@
 #include "MusicLibraryModel.h"
 #include "FavoriteManager.h"
+#include "CoverManager.h"
 #include <QDirIterator>
 #include <QFileInfo>
 #include <QFile>
@@ -47,6 +48,8 @@ QVariant MusicLibraryModel::data(const QModelIndex & index,int role) const
         return track.favorite;
     case LastPlayedRole:
         return track.lastPlayed;
+    case CoverUrlRole:
+        return track.coverUrl;
     default:
         return {};
     }
@@ -61,7 +64,8 @@ QHash<int,QByteArray> MusicLibraryModel::roleNames() const
         {AlbumRole,"album"},
         {DurationRole,"duration"},
         {FavoriteRole,"favorite"},
-        {LastPlayedRole,"lastPlayed"}
+        {LastPlayedRole,"lastPlayed"},
+        {CoverUrlRole, "coverUrl"}
     };
 }
 
@@ -151,6 +155,7 @@ void MusicLibraryModel::scanDirectory(const QString & directory)
         {
             track.favorite = m_favoriteManager->isFavorite(track.filePath);
         }
+        track.coverUrl = CoverManager::instance().getCoverUrl(track.filePath);
         m_tracks.append(track);
     }
     std::sort(m_tracks.begin(),m_tracks.end(),[](const MusicTrack & a,const MusicTrack & b){
@@ -355,6 +360,7 @@ void MusicLibraryModel::scanRandomDirectory(const QString & directory,int count)
         {
             track.favorite = m_favoriteManager->isFavorite(track.filePath);
         }
+        track.coverUrl = CoverManager::instance().getCoverUrl(track.filePath);
         m_tracks.append(track);
     }
     endResetModel();
@@ -363,8 +369,13 @@ void MusicLibraryModel::scanRandomDirectory(const QString & directory,int count)
 
 void MusicLibraryModel::appendTrack(const MusicTrack & track)
 {
+    MusicTrack t = track;
+    if (t.coverUrl.isEmpty() && !t.filePath.isEmpty())
+    {
+        t.coverUrl = CoverManager::instance().getCoverUrl(t.filePath);
+    }
     beginInsertRows(QModelIndex(), m_tracks.size(), m_tracks.size());
-    m_tracks.append(track);
+    m_tracks.append(t);
     endInsertRows();
     emit countChanged();
 }
@@ -373,8 +384,13 @@ void MusicLibraryModel::insertTrack(int index, const MusicTrack & track)
 {
     if (index < 0 || index > m_tracks.size())
         return;
+    MusicTrack t = track;
+    if (t.coverUrl.isEmpty() && !t.filePath.isEmpty())
+    {
+        t.coverUrl = CoverManager::instance().getCoverUrl(t.filePath);
+    }
     beginInsertRows(QModelIndex(), index, index);
-    m_tracks.insert(index, track);
+    m_tracks.insert(index, t);
     endInsertRows();
     emit countChanged();
 }

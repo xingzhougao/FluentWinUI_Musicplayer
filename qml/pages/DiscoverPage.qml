@@ -206,7 +206,9 @@ Item {
             }
 
             GridLayout {
+                id: recommendGrid
                 width: parent.width
+                height: implicitHeight
                 columns: width >= 1040 ? 4 : (width >= 780 ? 3 : 2)
                 rowSpacing: 18
                 columnSpacing: 18
@@ -301,45 +303,46 @@ Item {
             }
 
             // 最近播放前5首列表
-            ListView {
-                id: recentListView
+            Column {
+                id: recentListCol
                 width: parent.width
-                height: Math.min(5, count) * 68
-                interactive: false
-                clip: true
-                model: root.recentModel
+                spacing: 8
                 visible: root.recentModel && root.recentModel.count > 0
 
-                delegate: Item {
-                    width: recentListView.width
-                    height: index < 5 ? 68 : 0
-                    visible: index < 5
+                Repeater {
+                    model: root.recentModel
 
-                    MusicRow {
-                        width: parent.width
-                        height: 60
-                        anchors.top: parent.top
-                        numberText: (index + 1 < 10 ? "0" : "") + (index + 1)
-                        title: model.title || "未知歌曲"
-                        artist: model.artist || "未知歌手"
-                        album: model.album || ""
-                        durationText: root.playerController ? root.playerController.formatTime(model.duration) : "03:45"
-                        favorite: model.favorite || false
-                        isCurrent: root.playerController && root.playerController.currentLibrary === root.recentModel && root.playerController.currentIndex === index
-                        isPlaying: isCurrent && root.playerController.playing
-                        textPrimaryColor: root.textPrimaryColor
-                        textSecondaryColor: root.textSecondaryColor
-                        accentColor: root.accentColor
+                    delegate: Item {
+                        width: recentListCol.width
+                        height: index < 5 ? 60 : 0
+                        visible: index < 5
 
-                        onPlayRequested: {
-                            if (root.playerController && root.recentModel) {
-                                root.playerController.playFromModel(root.recentModel, index);
+                        MusicRow {
+                            anchors.fill: parent
+                            visible: parent.visible
+                            numberText: (index + 1 < 10 ? "0" : "") + (index + 1)
+                            title: model.title || "未知歌曲"
+                            artist: model.artist || "未知歌手"
+                            album: model.album || ""
+                            durationText: root.playerController ? root.playerController.formatTime(model.duration) : "03:45"
+                            coverUrl: (typeof model.coverUrl !== "undefined" && model.coverUrl) ? model.coverUrl : ""
+                            favorite: model.favorite || false
+                            isCurrent: root.playerController && root.playerController.currentLibrary === root.recentModel && root.playerController.currentIndex === index
+                            isPlaying: isCurrent && root.playerController.playing
+                            textPrimaryColor: root.textPrimaryColor
+                            textSecondaryColor: root.textSecondaryColor
+                            accentColor: root.accentColor
+
+                            onPlayRequested: {
+                                if (root.playerController && root.recentModel) {
+                                    root.playerController.playFromModel(root.recentModel, index);
+                                }
                             }
-                        }
 
-                        onFavoriteToggled: {
-                            if (root.recentModel) {
-                                root.recentModel.toggleFavorite(index);
+                            onFavoriteToggled: {
+                                if (root.recentModel) {
+                                    root.recentModel.toggleFavorite(index);
+                                }
                             }
                         }
                     }

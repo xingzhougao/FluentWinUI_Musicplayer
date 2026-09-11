@@ -58,7 +58,7 @@ PlayerController::PlayerController(MusicLibraryModel * library,QObject * parent)
     //MusicLibraryModel 当前歌曲数据变化 PlayerController的title / artist属性也需要通知QML更新
     setLibrary(library);
     if(m_library && m_library->count() > 0)
-        selectTrack(0,true);
+        selectTrack(0,false);
 }
 
 QString PlayerController::title() const
@@ -75,6 +75,22 @@ QString PlayerController::artist() const
         return m_library->trackAt(m_index).artist;
 
     return m_currentTrack.artist;
+}
+
+QString PlayerController::album() const
+{
+    if(m_library && m_index >= 0 && m_index < m_library->count())
+        return m_library->trackAt(m_index).album;
+
+    return m_currentTrack.album;
+}
+
+QString PlayerController::coverUrl() const
+{
+    if(m_library && m_index >= 0 && m_index < m_library->count())
+        return m_library->trackAt(m_index).coverUrl;
+
+    return m_currentTrack.coverUrl;
 }
 
 //当前是否正在播放
@@ -239,6 +255,7 @@ void PlayerController::selectTrack(int index,bool autoplay)
     if(track.filePath.isEmpty())
         return;
 
+    m_isChangingTrack = true;
     m_currentTrack = track;
 
     //修改当前歌曲索引
@@ -254,14 +271,17 @@ void PlayerController::selectTrack(int index,bool autoplay)
     loadLyrics(index);
     //设置真实音乐文件
     m_player->setSource(QUrl::fromLocalFile(track.filePath));
-    //标记最近播放并开始播放
-    m_library->markPlayed(index);
-    if(m_recentManager)
-    {
-        m_recentManager->recordTrack(track);
-    }
     if(autoplay)
+    {
+        //标记最近播放并开始播放
+        m_library->markPlayed(index);
+        if(m_recentManager)
+        {
+            m_recentManager->recordTrack(track);
+        }
         m_player->play();
+    }
+    m_isChangingTrack = false;
 }
 
 //设置播放进度 QML Slider
@@ -328,8 +348,19 @@ void PlayerController::readMetaData()
 //当前歌曲自然播放结束
 void PlayerController::handleEndOfMedia()
 {
+    if(m_isChangingTrack)
+        return;
+
     if(!m_library || m_library->count() <= 0)
         return;
+
+    // 只有当播放器真的播放到接近文件末尾时才算自然播放结束（避免setSource刷新媒体误报）
+    qint64 dur = m_player->duration();
+    qint64 pos = m_player->position();
+    if(dur > 0 && pos < dur - 2000)
+    {
+        return;
+    }
 
     //单曲循环
     if(m_playMode == 2)

@@ -1,6 +1,7 @@
 #include "PlaylistManager.h"
 #include "FavoriteManager.h"
 #include "AppConfig.h"
+#include "CoverManager.h"
 #include <QCoreApplication>
 #include <QFile>
 #include <QFileInfo>
@@ -254,6 +255,8 @@ MusicTrack PlaylistManager::resolveTrackFromFile(const QString & filePath) const
     {
         track.duration = (info.size() / 16000) * 1000;
     }
+
+    track.coverUrl = CoverManager::instance().getCoverUrl(track.filePath);
 
     return track;
 }

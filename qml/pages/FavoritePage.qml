@@ -145,7 +145,7 @@ Item {
 
                 Text {
                     Layout.preferredWidth: 46
-                    text: "序号"
+                    text: "封面"
                     color: "#6b7c91"
                     font.pixelSize: 12
                     font.weight: Font.Medium
@@ -189,53 +189,56 @@ Item {
             }
         }
 
-        //空状态提示
+        // 列表与空状态容器
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: !root.favoriteModel || root.favoriteModel.count === 0
 
-            ColumnLayout {
-                anchors.centerIn: parent
-                spacing: 14
+            // 空状态提示
+            Item {
+                anchors.fill: parent
+                visible: !root.favoriteModel || root.favoriteModel.count === 0
 
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    width: 72
-                    height: 72
-                    radius: 36
-                    color: "#131d2b"
-                    border.color: "#1e2e42"
-                    border.width: 1
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 14
 
-                    Image {
-                        anchors.centerIn: parent
-                        width: 32
-                        height: 32
-                        source: "../icons/like.svg"
-                        fillMode: Image.PreserveAspectFit
-                        opacity: 0.7
+                    Rectangle {
+                        Layout.alignment: Qt.AlignHCenter
+                        width: 72
+                        height: 72
+                        radius: 36
+                        color: "#131d2b"
+                        border.color: "#1e2e42"
+                        border.width: 1
+
+                        Image {
+                            anchors.centerIn: parent
+                            width: 32
+                            height: 32
+                            source: "../icons/like.svg"
+                            fillMode: Image.PreserveAspectFit
+                            opacity: 0.7
+                        }
+                    }
+
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "暂无喜欢的音乐 在各处点击红心即可添加收藏！"
+                        color: root.textSecondaryColor
+                        font.pixelSize: 14
                     }
                 }
-
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "暂无喜欢的音乐 在各处点击红心即可添加收藏！"
-                    color: root.textSecondaryColor
-                    font.pixelSize: 14
-                }
             }
-        }
 
-        //歌曲列表
-        ListView {
-            id: songListView
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-            model: root.favoriteModel
-            visible: root.favoriteModel && root.favoriteModel.count > 0
+            // 歌曲列表
+            ListView {
+                id: songListView
+                anchors.fill: parent
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                model: root.favoriteModel
+                visible: root.favoriteModel && root.favoriteModel.count > 0
 
             ScrollBar.vertical: ScrollBar {
                 id: vBar
@@ -272,39 +275,66 @@ Item {
                     anchors.rightMargin: 16
                     spacing: 12
 
-                    //封面缩略图与序号
+                    // 封面缩略图
                     Item {
                         Layout.preferredWidth: 46
-                        Layout.preferredHeight: 40
+                        Layout.preferredHeight: 44
 
                         Rectangle {
                             id: coverBox
-                            width: 38
-                            height: 38
-                            radius: 7
+                            width: 42
+                            height: 42
+                            radius: 6
                             anchors.centerIn: parent
                             clip: true
+                            color: "#162335"
 
                             gradient: Gradient {
-                                GradientStop {position: 0.0; color: isCurrent ? "#2a4b7c" : (rowMouse.containsMouse ? "#1f385c" : "#17263b") }
-                                GradientStop {position: 1.0; color: isCurrent ? "#55387a" : (rowMouse.containsMouse ? "#392454" : "#271a39") }
+                                GradientStop { position: 0.0; color: isCurrent ? "#2a4b7c" : (rowMouse.containsMouse ? "#1f385c" : "#17263b") }
+                                GradientStop { position: 1.0; color: isCurrent ? "#55387a" : (rowMouse.containsMouse ? "#392454" : "#271a39") }
                             }
 
-                            Text {
-                                anchors.centerIn: parent
-                                visible: !rowMouse.containsMouse && !isPlaying
-                                text: (index + 1 < 10 ? "0" : "") + (index + 1)
-                                color: isCurrent ? root.accentColor : "#5b6d82"
-                                font.pixelSize: 11
-                                font.weight: Font.Medium
+                            // 真实封面
+                            Image {
+                                id: rowCoverImg
+                                anchors.fill: parent
+                                source: (typeof model.coverUrl !== "undefined" && model.coverUrl) ? model.coverUrl : ""
+                                visible: source !== "" && status === Image.Ready
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
                             }
 
-                            Text {
+                            // 无封面时：显示“暂无封面”
+                            Column {
                                 anchors.centerIn: parent
+                                spacing: 1
+                                visible: !rowCoverImg.visible && !rowMouse.containsMouse && !isPlaying
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "♪"
+                                    color: isCurrent ? root.accentColor : "#5b6d82"
+                                    font.pixelSize: 11
+                                }
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "暂无封面"
+                                    color: isCurrent ? root.accentColor : "#5b6d82"
+                                    font.pixelSize: 7
+                                }
+                            }
+
+                            // 悬浮或正在播放时的播放控制图标
+                            Rectangle {
+                                anchors.fill: parent
+                                color: rowCoverImg.visible ? "#80000000" : "transparent"
                                 visible: rowMouse.containsMouse || isPlaying
-                                text: isPlaying ? "❚❚" : "▶"
-                                color: "white"
-                                font.pixelSize: isPlaying ? 10 : 12
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: isPlaying ? "❚❚" : "▶"
+                                    color: "white"
+                                    font.pixelSize: isPlaying ? 10 : 12
+                                }
                             }
                         }
                     }
@@ -396,4 +426,5 @@ Item {
             }
         }
     }
+}
 }
